@@ -11,22 +11,9 @@ import { Text } from './Text'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { DraggableSheet } from './DraggableSheet'
-import { bookingsApi, propertyApi } from '../lib/api'
+import { fetchNotices, type Notice } from '../lib/notifications'
 import { useAuthStore } from '../store/authStore'
 import { colors, fonts, radius } from '../theme'
-
-// ponytail: no notifications backend yet — this derives a feed client-side from
-// the user's bookings + listing statuses. Replace with a real /notifications
-// endpoint (+ unread tracking + push) when expo-notifications lands (backlog).
-
-interface Notice {
-  id: string
-  icon: React.ComponentProps<typeof Ionicons>['name']
-  title: string
-  body: string
-  at: string // ISO — used for sorting + the time label
-  onPress?: () => void
-}
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
@@ -48,55 +35,14 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
     let mounted = true
     setLoading(true)
     ;(async () => {
-      const notices: Notice[] = []
-      const go = (path: string) => () => { onClose(); router.push(path as never) }
-      const [bookings, listings] = await Promise.allSettled([
-        bookingsApi.listMine(0, 20),
-        propertyApi.myListings(0, 20),
-      ])
-      if (bookings.status === 'fulfilled') {
-        for (const b of bookings.value.data.content) {
-          if (b.status === 'CONFIRMED') notices.push({
-            id: `b-${b.id}`, icon: 'calendar', at: b.updatedAt,
-            title: 'Site visit confirmed',
-            body: `${b.propertyTitle} — ${[b.preferredDate, b.preferredWindow].filter(Boolean).join(' · ') || 'owner will coordinate the slot'}`,
-            onPress: go(`/properties/${b.propertyId}`),
-          })
-          if (b.status === 'CANCELLED' && b.cancelledBy === 'OWNER') notices.push({
-            id: `b-${b.id}`, icon: 'calendar-clear-outline', at: b.updatedAt,
-            title: 'Site visit cancelled by owner',
-            body: b.propertyTitle,
-            onPress: go(`/properties/${b.propertyId}`),
-          })
-        }
-      }
-      if (listings.status === 'fulfilled') {
-        for (const p of listings.value.data.content) {
-          if (p.status === 'ACTIVE') notices.push({
-            id: `l-${p.id}`, icon: 'checkmark-circle', at: p.createdAt,
-            title: 'Your listing is live',
-            body: p.title,
-            onPress: go(`/properties/${p.id}?ownerView=1`),
-          })
-          if (p.status === 'REJECTED') notices.push({
-            id: `l-${p.id}`, icon: 'alert-circle-outline', at: p.createdAt,
-            title: 'Listing needs changes',
-            body: `${p.title} — open it to see the review notes`,
-            onPress: go(`/properties/${p.id}?ownerView=1`),
-          })
-          if (p.status === 'PENDING_REVIEW') notices.push({
-            id: `l-${p.id}`, icon: 'time-outline', at: p.createdAt,
-            title: 'Listing under review',
-            body: p.title,
-            onPress: go(`/properties/${p.id}?ownerView=1`),
-          })
-        }
-      }
-      notices.sort((a, b) => b.at.localeCompare(a.at))
-      if (mounted) { setItems(notices.slice(0, 12)); setLoading(false) }
+      try {
+        const notices = await fetchNotices()
+        if (mounted) setItems(notices)
+      } catch { if (mounted) setItems([]) }
+      finally { if (mounted) setLoading(false) }
     })()
     return () => { mounted = false }
-  }, [visible, isLoggedIn, onClose, router])
+  }, [visible, isLoggedIn])
 
   return (
     <DraggableSheet visible={visible} onClose={onClose}>
@@ -122,7 +68,7 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
       ) : (
         <ScrollView style={{ maxHeight: Dimensions.get('window').height * 0.5 }} showsVerticalScrollIndicator={false}>
           {items.map((n) => (
-            <Pressable key={n.id} onPress={n.onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}>
+            <Pressable key={n.id} onPress={() => { onClose(); router.push(n.href as never) }} style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}>
               <View style={styles.rowIcon}><Ionicons name={n.icon} size={18} color={colors.brand} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{n.title}</Text>
