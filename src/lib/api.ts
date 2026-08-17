@@ -11,7 +11,7 @@ import type {
 
 const baseURL =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ||
-  'https://realestate-backend-tgbv.onrender.com/api'
+  'https://realestate-backend-ye8a.onrender.com/api'
 
 const api = axios.create({
   baseURL,

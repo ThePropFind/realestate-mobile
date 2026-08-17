@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "PropFind",
-    "slug": "realestate-mobile",
+    "slug": "propfind",
+    "owner": "propfinds-team",
     "scheme": "propfind",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,10 +12,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://realestate-backend-tgbv.onrender.com/api",
+      "apiUrl": "https://realestate-backend-ye8a.onrender.com/api",
       "router": {},
       "eas": {
-        "projectId": "f104dd45-9e6c-4867-8063-1f200f0aabee"
+        "projectId": "27935c82-3493-4366-8604-02a9f48c4e05"
       }
     },
     "ios": {
@@ -57,7 +58,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/f104dd45-9e6c-4867-8063-1f200f0aabee"
+      "url": "https://u.expo.dev/27935c82-3493-4366-8604-02a9f48c4e05"
     }
   }
 }
