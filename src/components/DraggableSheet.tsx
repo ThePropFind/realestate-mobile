@@ -1,11 +1,64 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Animated, Dimensions, Modal, PanResponder, Pressable, StyleSheet, View,
-  type LayoutChangeEvent, type ViewStyle,
+  AccessibilityInfo, Animated, Easing, Modal, PanResponder, Pressable, StyleSheet,
+  useWindowDimensions, View, type LayoutChangeEvent, type ViewStyle,
 } from 'react-native'
 import { colors, radius } from '../theme'
 
-const SCREEN_H = Dimensions.get('window').height
+/**
+ * Springs in Apple's terms (damping ratio ζ + response), mapped onto RN's physics config:
+ * ω₀ = 2π/response, stiffness = m·ω₀², damping = 2·ζ·m·ω₀, mass = 1.
+ *
+ * Overshoot is earned, not decorative: a sheet that appeared because you tapped a button
+ * had no momentum, so it settles flat (ζ 1.0). A sheet you just dragged did, so the
+ * snap-back keeps a little of it (ζ 0.8 / response 0.3 — Apple's own drawer figure).
+ */
+const ENTER_SPRING = { stiffness: 247, damping: 31, mass: 1, useNativeDriver: true } as const
+const RELEASE_SPRING = { stiffness: 438, damping: 33, mass: 1, useNativeDriver: true } as const
+/** Sub-pixel settle where it's visible; loose where the sheet is already off-screen, so
+ *  the unmount (and onClose) don't wait out a spring tail nobody can see. */
+const SEAT_REST = { restDisplacementThreshold: 0.5, restSpeedThreshold: 2 } as const
+const EXIT_REST = { restDisplacementThreshold: 4, restSpeedThreshold: 40 } as const
+/**
+ * Drawer curve (the iOS/Vaul one): a strong ease-out. `Animated.timing` defaults to
+ * `Easing.inOut(Easing.ease)`, whose slow start lands on exactly the frames the user
+ * is watching — an exit must never begin slowly.
+ */
+const DRAWER_EASING = Easing.bezier(0.32, 0.72, 0, 1)
+const EXIT_MS = 200
+const FADE_MS = 200
+/** PanResponder reports velocity in px/ms; `Animated.spring` integrates in units/second. */
+const VY_TO_SPRING = 1000
+/** Cap on the dismissal commit line — see `commitDistance`. */
+const MAX_COMMIT_PX = 120
+
+/**
+ * Where a flick would coast to if we let it decelerate — Apple's projection function from
+ * *Designing Fluid Interfaces*, the same exponential decay scroll uses (not the textbook
+ * v²/2a). Written for px/ms in, px out: (v·1000/1000)·d/(1−d).
+ */
+const DECELERATION = 0.998
+const project = (vy: number) => vy * (DECELERATION / (1 - DECELERATION))
+
+/**
+ * Progressive resistance past a boundary (Apple's rubber-band curve): the further you
+ * pull, the less the sheet follows, asymptotically. A flat multiplier resists evenly,
+ * which reads as a slipping surface rather than a stretching one.
+ */
+const rubberband = (overshoot: number, dimension: number, constant = 0.55) =>
+  (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot))
+
+/** OS "Reduce Motion" setting, kept live (users can flip it while the app is open). */
+function useReduceMotion() {
+  const [reduce, setReduce] = useState(false)
+  useEffect(() => {
+    let alive = true
+    AccessibilityInfo.isReduceMotionEnabled().then(v => { if (alive) setReduce(v) })
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduce)
+    return () => { alive = false; sub.remove() }
+  }, [])
+  return reduce
+}
 
 /**
  * Bottom sheet that can be flicked/dragged down to dismiss — the behaviour every
@@ -15,10 +68,21 @@ const SCREEN_H = Dimensions.get('window').height
  *
  * The Modal deliberately uses `animationType="none"`: letting the OS slide the modal
  * would animate the *backdrop* up from the bottom too, and would run a second,
- * competing animation on top of the drag transform (which made drag-to-close land
- * inconsistently). Instead one Animated.Value drives everything — the sheet's
- * translateY, and the backdrop opacity interpolated from it, so the scrim fades in
- * as the sheet rises and fades back out under your finger as you drag it away.
+ * competing animation on top of the drag transform. Instead one Animated.Value drives
+ * everything — the sheet's translateY, and the backdrop opacity derived from it, so the
+ * scrim fades in as the sheet rises and fades back out under your finger as you drag.
+ *
+ * Three things are easy to get wrong here and are load-bearing:
+ * - the entrance waits for `onLayout`, because the travel distance is the sheet's own
+ *   measured height and guessing it makes the entrance length nondeterministic;
+ * - the scrim is mapped over that same measured height, not the screen's, or a short
+ *   sheet finishes leaving while the scrim is still ~0.7 opaque and pops at unmount;
+ * - the effect is keyed on `visible` alone, since re-running it on internal state
+ *   restarted the entrance mid-flight.
+ *
+ * Release is decided by momentum projection rather than by a distance threshold, and every
+ * animation starts from the sheet's live position, so a drag can be grabbed, reversed or
+ * re-opened mid-flight without a jump.
  */
 export function DraggableSheet({
   visible, onClose, children, contentStyle,
@@ -28,72 +92,213 @@ export function DraggableSheet({
   children: React.ReactNode
   contentStyle?: ViewStyle
 }) {
-  // Distance the sheet travels. Starts as a full-screen guess and tightens to the
-  // real height on first layout, so the exit always clears the screen exactly —
-  // the old hardcoded 700 left a sliver visible on tall devices.
-  const height = useRef(SCREEN_H)
-  const translateY = useRef(new Animated.Value(SCREEN_H)).current
+  const { height: screenH } = useWindowDimensions()
+  const screenHRef = useRef(screenH)
+  screenHRef.current = screenH
+
+  const reduceMotion = useReduceMotion()
+  const reduceMotionRef = useRef(reduceMotion)
+  reduceMotionRef.current = reduceMotion
+
   // Keep the latest onClose so the once-created PanResponder never calls a stale one.
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+
+  // Distance the sheet travels: its own height, since it's bottom-anchored. Held both
+  // as a ref (for animation targets) and as an Animated.Value (so the backdrop range
+  // stays correct without a re-render on every layout pass).
+  const sheetH = useRef(0)
+  const travel = useRef(new Animated.Value(screenH)).current
+
+  const translateY = useRef(new Animated.Value(screenH)).current
+  // Only moves when Reduce Motion is on: there the sheet fades in place instead of sliding.
+  const fade = useRef(new Animated.Value(1)).current
+
   // Kept mounted through the exit animation, then torn down.
   const [mounted, setMounted] = useState(visible)
+  const mountedRef = useRef(visible)
+  const setMountedState = useCallback((v: boolean) => { mountedRef.current = v; setMounted(v) }, [])
 
-  const animateOut = useCallback(() => {
-    Animated.timing(translateY, {
-      toValue: height.current, duration: 200, useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) onCloseRef.current()
-    })
+  // Which value the exit is animating, or null when the sheet isn't leaving.
+  const exiting = useRef<'slide' | 'fade' | null>(null)
+  // Set between "open requested" and the first layout — the entrance can't start until
+  // the sheet has been measured.
+  const pendingEnter = useRef(false)
+  const dragFrom = useRef(0)
+
+  // JS-side mirror of translateY. With the native driver the JS value goes stale while
+  // an animation runs, and a drag has to start from where the sheet actually is — so a
+  // grab mid-entrance continues from that point instead of snapping. Costs one event per
+  // frame of native-driven animation only (~20 per open), never during a drag.
+  const currentY = useRef(screenH)
+  useEffect(() => {
+    const id = translateY.addListener(({ value }) => { currentY.current = value })
+    return () => translateY.removeListener(id)
   }, [translateY])
+
+  const fadeTo = useCallback((toValue: number, done?: (r: { finished: boolean }) => void) => {
+    Animated.timing(fade, {
+      toValue, duration: FADE_MS, easing: DRAWER_EASING, useNativeDriver: true,
+    }).start(done)
+  }, [fade])
+
+  /** Springs the sheet to its resting position from wherever it currently is. */
+  const seat = useCallback(() => {
+    Animated.spring(translateY, { toValue: 0, ...ENTER_SPRING, ...SEAT_REST }).start()
+  }, [translateY])
+
+  /**
+   * How far the projected resting point has to be for a release to mean "dismiss".
+   * Halfway is the honest nearest-snap line between seated and gone, but on a tall sheet
+   * (Notifications caps at half the screen) half is a 260px haul, so it's capped —
+   * projection still decides, the commit line just stays reachable by a slow drag.
+   */
+  const commitDistance = useCallback(
+    () => Math.min((sheetH.current || screenHRef.current) * 0.5, MAX_COMMIT_PX),
+    [],
+  )
+
+  /**
+   * The single owner of the exit. `velocity` (px/ms) marks a gesture dismissal, which
+   * continues the finger's momentum; `notify` fires onClose once the sheet has left
+   * (omit it when the parent already set `visible` to false).
+   */
+  const runExit = useCallback((
+    { velocity, notify = false }: { velocity?: number; notify?: boolean } = {},
+  ) => {
+    if (exiting.current) return
+    const target = sheetH.current || screenHRef.current
+    const done = ({ finished }: { finished: boolean }) => {
+      exiting.current = null
+      if (!finished) return // interrupted by a re-open — stay mounted
+      setMountedState(false)
+      if (notify) onCloseRef.current()
+    }
+    if (velocity !== undefined) {
+      // A drag dismissal slides even under Reduce Motion: the movement is the user's
+      // own, and cutting it mid-gesture is more jarring than finishing it.
+      exiting.current = 'slide'
+      Animated.spring(translateY, {
+        toValue: target, velocity: velocity * VY_TO_SPRING, ...RELEASE_SPRING, ...EXIT_REST,
+      }).start(done)
+    } else if (reduceMotionRef.current) {
+      exiting.current = 'fade'
+      fadeTo(0, done)
+    } else {
+      exiting.current = 'slide'
+      Animated.timing(translateY, {
+        toValue: target, duration: EXIT_MS, easing: DRAWER_EASING, useNativeDriver: true,
+      }).start(done)
+    }
+  }, [fadeTo, setMountedState, translateY])
+
+  // The PanResponder is created once, so it reaches the current runExit through a ref.
+  const runExitRef = useRef(runExit)
+  runExitRef.current = runExit
+
+  /** Backdrop tap / Android back: play the exit, then tell the parent. */
+  const dismiss = useCallback(() => runExit({ notify: true }), [runExit])
 
   useEffect(() => {
     if (visible) {
-      setMounted(true)
-      translateY.setValue(height.current)
-      Animated.spring(translateY, {
-        toValue: 0, useNativeDriver: true, bounciness: 0, speed: 14,
-      }).start()
-    } else if (mounted) {
-      Animated.timing(translateY, {
-        toValue: height.current, duration: 200, useNativeDriver: true,
-      }).start(({ finished }) => { if (finished) setMounted(false) })
+      // Re-opened mid-exit: retarget from the current position instead of restarting,
+      // so a fast close→open doesn't jump back to the start.
+      if (exiting.current) {
+        if (exiting.current === 'fade') fadeTo(1)
+        else seat()
+        return
+      }
+      setMountedState(true)
+      // Park off-screen (the screen height always clears a bottom-anchored sheet) until
+      // onLayout measures the sheet; the entrance starts from there.
+      translateY.setValue(screenHRef.current)
+      pendingEnter.current = true
+    } else if (mountedRef.current) {
+      runExit()
     }
-  }, [visible, mounted, translateY])
+    // Keyed on `visible` only. Everything else this reads lives in a ref precisely so
+    // that internal state changes can't re-enter and restart the animation.
+  }, [visible, fadeTo, runExit, seat, setMountedState, translateY])
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height
-    if (h > 0) height.current = h
-  }, [])
+    if (h <= 0) return
+    sheetH.current = h
+    travel.setValue(h)
+    if (!pendingEnter.current) return
+    pendingEnter.current = false
+    if (reduceMotionRef.current) {
+      // Reduce Motion: no positional slide. The sheet sits where it belongs and both it
+      // and the scrim fade up — movement dropped, the state change still explained.
+      translateY.setValue(0)
+      fade.setValue(0)
+      fadeTo(1)
+    } else {
+      fade.setValue(1)
+      translateY.setValue(h)
+      seat()
+    }
+  }, [fade, fadeTo, seat, translateY, travel])
 
   const pan = useRef(
     PanResponder.create({
-      // Only claim the gesture for a downward drag (lets horizontal/tap pass through).
+      // Only claim the gesture for a downward drag (lets horizontal/tap pass through),
+      // and never once the sheet is already leaving.
       // No *Capture* variant on purpose: children get first refusal, so an inner
       // ScrollView keeps winning touches that start on it.
-      onMoveShouldSetPanResponder: (_, g) => g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy) },
+      onMoveShouldSetPanResponder: (_, g) =>
+        exiting.current === null && g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderGrant: () => {
+        // Halt any entrance in flight and drag on from exactly where it had got to.
+        dragFrom.current = currentY.current
+        translateY.stopAnimation()
+      },
+      onPanResponderMove: (_, g) => {
+        const next = dragFrom.current + g.dy
+        // Dragging up past the seated position resists progressively instead of
+        // stopping dead against an invisible wall.
+        translateY.setValue(next > 0 ? next : rubberband(next, sheetH.current || screenHRef.current))
+      },
       onPanResponderRelease: (_, g) => {
-        if (g.dy > 90 || g.vy > 0.65) {
-          animateOut()
+        // Decide on where the gesture was *going*, not where the finger happened to stop:
+        // project the release velocity forward and pick the nearer resting place. One rule
+        // replaces a distance threshold and a flick threshold, and it gets the reversal
+        // case right for free — drag far, flick back up, and the projection lands short,
+        // so the sheet seats instead of dismissing against the user's intent.
+        const projected = currentY.current + project(g.vy)
+        if (projected > commitDistance()) {
+          runExitRef.current({ velocity: Math.max(g.vy, 0), notify: true })
         } else {
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start()
+          // Snap back carrying the release velocity, so letting go mid-drag continues the
+          // motion instead of restarting it from a standstill.
+          Animated.spring(translateY, {
+            toValue: 0, velocity: g.vy * VY_TO_SPRING, ...RELEASE_SPRING, ...SEAT_REST,
+          }).start()
         }
+      },
+      // Gesture stolen (a native child, an incoming call): never leave the sheet
+      // stranded half-open with a half-faded scrim.
+      onPanResponderTerminate: () => {
+        Animated.spring(translateY, { toValue: 0, ...RELEASE_SPRING, ...SEAT_REST }).start()
       },
     }),
   ).current
 
-  // Scrim tracks the sheet: fully dark when seated, clear when fully dismissed.
-  const backdropOpacity = translateY.interpolate({
-    inputRange: [0, SCREEN_H],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  })
+  // Scrim tracks the sheet: opaque when seated, clear when fully dismissed — over the
+  // sheet's own travel distance, so it reaches 0 exactly as the sheet clears the screen.
+  const backdropOpacity = Animated.multiply(
+    fade,
+    Animated.divide(translateY, travel).interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    }),
+  )
 
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={animateOut}>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={dismiss}>
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={animateOut} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} />
       </Animated.View>
       {/* Pan handlers on the whole sheet (Instagram-style): dragging the handle,
           title or any padding pulls the sheet down. Inner ScrollViews still win
@@ -101,7 +306,7 @@ export function DraggableSheet({
       <Animated.View
         {...pan.panHandlers}
         onLayout={onLayout}
-        style={[styles.sheet, contentStyle, { transform: [{ translateY }] }]}
+        style={[styles.sheet, contentStyle, { opacity: fade, transform: [{ translateY }] }]}
       >
         <View style={styles.grabber}>
           <View style={styles.handle} />
