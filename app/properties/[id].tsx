@@ -312,7 +312,7 @@ export default function PropertyDetailScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.ownerName}>{data.owner.name}</Text>
               <Text style={styles.ownerMeta}>
-                {prettyEnum(data.owner.role)}{data.owner.agencyName ? ` · ${data.owner.agencyName}` : ''}
+                {prettyEnum(data.owner.role)}
               </Text>
             </View>
           </View>

@@ -40,13 +40,21 @@ export interface PropertyCard {
 
 export interface PropertyImage { id: string; url: string; isPrimary: boolean; sortOrder: number }
 export interface Amenity       { id: string; name: string; category: string; iconKey: string }
-export interface OwnerInfo     { id: string; name: string; phone: string | null; profilePhotoUrl: string | null; role: UserRole; agencyName: string | null; avgRating: number | null }
+export interface OwnerInfo     { id: string; name: string; phone: string | null; profilePhotoUrl: string | null; role: UserRole
+  /** Email confirmed via OTP. NOT an identity check — never label this "Verified Owner". */
+  isEmailVerified: boolean
+  memberSince: string | null }
 
 export interface PropertyDocument {
-  id: string
   docType: 'FMB_SKETCH' | 'EC' | 'PATTA' | 'APPROVAL_LETTER' | 'OTHER'
-  url: string
   label: string | null
+  /**
+   * Present only on the owner endpoint (`/properties/{id}/my`). The public
+   * detail endpoint returns a summary with no id and no storage URL — docs
+   * hold owner PII and are readable only via an admin presigned download.
+   */
+  id?: string
+  url?: string
 }
 
 export interface PropertyDetail {
