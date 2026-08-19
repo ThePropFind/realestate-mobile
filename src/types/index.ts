@@ -14,7 +14,7 @@ export type PreferredTenant = 'FAMILY' | 'BACHELOR_MEN' | 'BACHELOR_WOMEN' | 'AN
 export type ListingStatus   = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'EXPIRED' | 'REJECTED' | 'SOLD_RENTED'
 export type PriceUnit       = 'TOTAL' | 'PER_MONTH' | 'PER_SQFT'
 export type PossessionStatus = 'READY_TO_MOVE' | 'UNDER_CONSTRUCTION' | 'NEW_LAUNCH'
-export type LandmarkKind    = 'SCHOOL' | 'HOSPITAL' | 'MALL' | 'TRANSIT' | 'PARK' | 'RESTAURANT' | 'BANK' | 'OTHER'
+export type LandmarkKind    = 'HOSPITAL' | 'SCHOOL' | 'MALL' | 'TRANSPORT' | 'FOOD' | 'PARK' | 'TECH'
 export type ReportReason    = 'FRAUD_OR_SCAM' | 'ALREADY_SOLD_OR_RENTED' | 'INCORRECT_INFO'
                             | 'DUPLICATE_LISTING' | 'OFFENSIVE_CONTENT' | 'OTHER'
 export type UserRole        = 'BUYER' | 'SELLER' | 'AGENT' | 'ADMIN'

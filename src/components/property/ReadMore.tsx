@@ -1,0 +1,42 @@
+import { useState } from 'react'
+import { Pressable, StyleSheet } from 'react-native'
+import { Text } from '../Text'
+import { colors, fonts, typography } from '../../theme'
+
+/**
+ * Collapsible body copy. Generic on purpose — nothing here knows it is describing
+ * a property, so the same component can carry any long text block.
+ *
+ * The toggle only renders once the text has actually been measured as truncated:
+ * a "Read more" under a two-line description is a control that does nothing.
+ */
+export function ReadMore({ text, lines = 5 }: { text: string; lines?: number }) {
+  const [expanded, setExpanded] = useState(false)
+  const [truncated, setTruncated] = useState(false)
+
+  return (
+    <>
+      <Text
+        style={styles.body}
+        numberOfLines={expanded ? undefined : lines}
+        onTextLayout={(e) => {
+          // Fires with every laid-out line; only meaningful while collapsed.
+          if (!expanded && e.nativeEvent.lines.length >= lines) setTruncated(true)
+        }}
+      >
+        {text}
+      </Text>
+      {truncated ? (
+        <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8} style={styles.toggle}>
+          <Text style={styles.toggleText}>{expanded ? 'Read less' : 'Read more'}</Text>
+        </Pressable>
+      ) : null}
+    </>
+  )
+}
+
+const styles = StyleSheet.create({
+  body: { ...typography.body, fontSize: 14, lineHeight: 22 },
+  toggle: { marginTop: 8, alignSelf: 'flex-start' },
+  toggleText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.brand },
+})

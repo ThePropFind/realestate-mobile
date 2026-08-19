@@ -4,7 +4,7 @@
 import type {
   ListingType, PropertyType, ListedBy, FurnishingStatus, PreferredTenant,
   ApprovalAuthority, OwnershipType, SoilType, WaterSource, ElectricService,
-  PropertyCreateRequest,
+  PossessionStatus, PropertyCreateRequest,
 } from '../types'
 
 export type Category = 'RESIDENTIAL' | 'COMMERCIAL_BUILDING' | 'PLOT_LAND' | 'AGRI_LAND'
@@ -48,6 +48,9 @@ export type WizardState = {
   facing:       string
   ageOfProperty: string
   parkingAvailable: boolean
+  /** Slot count, refining parkingAvailable. Stepper-driven, so always a number. */
+  parkingCount:     number
+  possessionStatus: PossessionStatus | null
   priceNegotiable:  boolean
   securityDeposit:  string
   preferredTenant:  PreferredTenant | null  // RENT / PG only
@@ -114,6 +117,8 @@ export const initialWizardState: WizardState = {
   facing: '',
   ageOfProperty: '',
   parkingAvailable: false,
+  parkingCount: 0,
+  possessionStatus: null,
   priceNegotiable: false,
   securityDeposit: '',
   preferredTenant: null,
@@ -249,6 +254,12 @@ export function buildCreateRequest(s: WizardState): PropertyCreateRequest {
     facing:       s.facing || null,
     ageOfProperty: isBuilding(s) ? num(s.ageOfProperty) : null,
     parkingAvailable: s.parkingAvailable,
+    // Only send a count when the toggle is on. Sending 0 alongside
+    // parkingAvailable: true would make the detail page render "None" for a
+    // listing the seller just said has parking.
+    parkingCount: s.parkingAvailable && s.parkingCount > 0 ? s.parkingCount : undefined,
+    // Buildings only — "Ready to Move" is meaningless for a plot or farmland.
+    possessionStatus: isBuilding(s) && s.possessionStatus ? s.possessionStatus : undefined,
     preferredTenant: (s.listingType === 'RENT' || s.listingType === 'PG') ? s.preferredTenant : null,
     addressLine: s.addressLine || undefined,
     latitude: s.latitude,

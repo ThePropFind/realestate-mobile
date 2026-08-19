@@ -17,6 +17,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     ...config.extra,
     apiUrl: process.env.EXPO_PUBLIC_API_URL || config.extra?.apiUrl,
+    // Base for shared listing links. Lives here rather than in code so ROADMAP
+    // Phase 5 can point shares at thepropfind.com without touching a component.
+    webUrl:
+      process.env.EXPO_PUBLIC_WEB_URL
+      || config.extra?.webUrl
+      || 'https://realestate-frontend-seven-topaz.vercel.app',
   },
   ios: {
     ...config.ios,

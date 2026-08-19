@@ -42,21 +42,36 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
   )
 }
 
-/** Property-detail skeleton: hero image block + title/price/meta lines. */
+/**
+ * Property-detail skeleton, matched to the redesigned above-the-fold layout:
+ * 300px gallery, thumbnail strip, badge row, title, location, price, then the
+ * 5-cell spec strip as a 3+2 grid. The shapes track what actually paints so the
+ * hand-off from skeleton to content does not visibly jump.
+ */
 export function DetailSkeleton() {
   return (
     <View>
-      <Skeleton style={{ width: '100%', height: 280, borderRadius: 0 }} />
+      <Skeleton style={{ width: '100%', height: 300, borderRadius: 0 }} />
+      <View style={styles.detailThumbs}>
+        {Array.from({ length: 4 }, (_, i) => (
+          <Skeleton key={i} style={{ width: 62, height: 48, borderRadius: radius.sm }} />
+        ))}
+      </View>
       <View style={styles.detailBody}>
-        <Skeleton style={{ width: '55%', height: 22 }} />
-        <Skeleton style={{ width: '80%', height: 16 }} />
-        <Skeleton style={{ width: '65%', height: 13 }} />
         <View style={styles.detailChips}>
           <Skeleton style={styles.chip} />
           <Skeleton style={styles.chip} />
-          <Skeleton style={styles.chip} />
         </View>
-        <Skeleton style={{ width: '100%', height: 90, borderRadius: radius.md }} />
+        <Skeleton style={{ width: '85%', height: 24 }} />
+        <Skeleton style={{ width: '50%', height: 14 }} />
+        <Skeleton style={{ width: '40%', height: 28 }} />
+      </View>
+      <View style={styles.detailCard}>
+        <View style={styles.detailSpecGrid}>
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} style={styles.specCell} />
+          ))}
+        </View>
       </View>
     </View>
   )
@@ -74,5 +89,13 @@ const styles = StyleSheet.create({
   body:  { flex: 1, padding: 12, gap: 8 },
   detailBody:  { padding: 16, gap: 10 },
   detailChips: { flexDirection: 'row', gap: 8, marginVertical: 4 },
+  detailThumbs: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  detailCard: {
+    marginHorizontal: 16, marginTop: 12, padding: 16,
+    backgroundColor: colors.white, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.borderLight,
+  },
+  detailSpecGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  specCell: { width: '31.6%', height: 74, borderRadius: radius.md },
   chip: { width: 84, height: 34, borderRadius: radius.md },
 })
