@@ -25,7 +25,7 @@ export function InfoSheet({
   visible, onClose, icon = 'rocket-outline', title, body, actionLabel, onAction,
 }: InfoSheetContent & { visible: boolean; onClose: () => void }) {
   return (
-    <DraggableSheet visible={visible} onClose={onClose} contentStyle={styles.sheet}>
+    <DraggableSheet visible={visible} onClose={onClose} contentStyle={styles.sheet} dragAnywhere>
       <View style={styles.iconWrap}>
         <Ionicons name={icon} size={26} color={ACCENT} />
       </View>

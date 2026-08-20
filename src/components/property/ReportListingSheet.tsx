@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Text, TextInput } from '../Text'
-import { DraggableSheet } from '../DraggableSheet'
+import { DraggableSheet, SheetGrabZone } from '../DraggableSheet'
 import { PrimaryButton } from '../PrimaryButton'
 import { appAlert } from '../AppAlert'
 import { propertyApi } from '../../lib/api'
@@ -57,15 +57,17 @@ export function ReportListingSheet({
 
   return (
     <DraggableSheet visible={visible} onClose={onClose} contentStyle={styles.sheet}>
-      <View style={styles.head}>
-        <View style={styles.headIcon}>
-          <Ionicons name="flag-outline" size={18} color={colors.danger} />
+      <SheetGrabZone>
+        <View style={styles.head}>
+          <View style={styles.headIcon}>
+            <Ionicons name="flag-outline" size={18} color={colors.danger} />
+          </View>
+          <Text style={styles.title}>Report this listing</Text>
         </View>
-        <Text style={styles.title}>Report this listing</Text>
-      </View>
-      <Text style={styles.sub}>
-        Tell us what is wrong. Reports are reviewed by our team — the owner is not told who reported.
-      </Text>
+        <Text style={styles.sub}>
+          Tell us what is wrong. Reports are reviewed by our team — the owner is not told who reported.
+        </Text>
+      </SheetGrabZone>
 
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.scroll}>
         <View style={styles.chips}>

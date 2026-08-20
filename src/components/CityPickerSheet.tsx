@@ -11,7 +11,7 @@ import { Text } from './Text'
 import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { searchApi } from '../lib/api'
-import { DraggableSheet } from './DraggableSheet'
+import { DraggableSheet, SheetGrabZone } from './DraggableSheet'
 import { useLocationStore, DEFAULT_CITY, type SelectedCity } from '../store/locationStore'
 import { colors, fonts, radius } from '../theme'
 import type { City } from '../types'
@@ -87,7 +87,9 @@ export function CityPickerSheet({ visible, onClose }: { visible: boolean; onClos
 
   return (
     <DraggableSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Choose your city</Text>
+      <SheetGrabZone>
+        <Text style={styles.title}>Choose your city</Text>
+      </SheetGrabZone>
 
       {/* GPS detect */}
       <Pressable style={styles.detectRow} onPress={detect} disabled={detecting}>

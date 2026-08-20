@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Text } from './Text'
-import { DraggableSheet } from './DraggableSheet'
+import { DraggableSheet, SheetGrabZone } from './DraggableSheet'
 import { ChipRow, type ChipOption } from './ChipRow'
 import { colors, fonts, radius } from '../theme'
 import type { ListingType, PropertyType } from '../types'
@@ -114,10 +114,10 @@ export function FilterSheet({
 
   return (
     <DraggableSheet visible={visible} onClose={onClose}>
-      <View style={styles.headerRow}>
+      <SheetGrabZone style={styles.headerRow}>
         <Text style={styles.title}>Filters</Text>
         <Pressable onPress={reset} hitSlop={8}><Text style={styles.reset}>Reset</Text></Pressable>
-      </View>
+      </SheetGrabZone>
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
         <ChipRow label="Looking for" options={LISTING} value={listing} onChange={pickListing} />
         <ChipRow label="Property type" options={PROPERTY} value={property} onChange={setProperty} />

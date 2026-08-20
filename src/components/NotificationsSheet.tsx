@@ -10,7 +10,7 @@ import {
 import { Text } from './Text'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { DraggableSheet } from './DraggableSheet'
+import { DraggableSheet, SheetGrabZone } from './DraggableSheet'
 import { fetchNotices, type Notice } from '../lib/notifications'
 import { useAuthStore } from '../store/authStore'
 import { colors, fonts, radius } from '../theme'
@@ -44,9 +44,16 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
     return () => { mounted = false }
   }, [visible, isLoggedIn])
 
+  // Empty / signed-out / loading states render no ScrollView.
+  const hasList = isLoggedIn && !loading && items.length > 0
+
   return (
-    <DraggableSheet visible={visible} onClose={onClose}>
-      <Text style={styles.title}>Notifications</Text>
+    // The list is the only scrollable here, so when there is no list the whole sheet
+    // can own the drag; otherwise the header does (see DraggableSheet's responder note).
+    <DraggableSheet visible={visible} onClose={onClose} dragAnywhere={!hasList}>
+      <SheetGrabZone>
+        <Text style={styles.title}>Notifications</Text>
+      </SheetGrabZone>
 
       {!isLoggedIn ? (
         <View style={styles.emptyWrap}>

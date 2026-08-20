@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AccessibilityInfo, Animated, Easing, Modal, PanResponder, Pressable, StyleSheet,
-  useWindowDimensions, View, type LayoutChangeEvent, type ViewStyle,
+  useWindowDimensions, View,
+  type GestureResponderHandlers, type LayoutChangeEvent, type PanResponderInstance,
+  type ViewStyle,
 } from 'react-native'
 import { colors, radius } from '../theme'
 
@@ -61,6 +63,29 @@ function useReduceMotion() {
 }
 
 /**
+ * Handlers that claim the gesture on touch-*down*. Shared with `SheetGrabZone` so a
+ * sheet's own header can drag it — see the responder note on `DraggableSheet`.
+ */
+const GrabHandlers = createContext<GestureResponderHandlers | null>(null)
+
+/**
+ * Wrap a sheet's non-scrolling header (title row, icon, subtitle) in this and it becomes
+ * a drag handle for the sheet, exactly like the grabber above it.
+ *
+ * Needed because a sheet whose body is a ScrollView can't claim every touch (see
+ * `dragAnywhere`), which would otherwise leave only the 22px grabber draggable.
+ * Interactive children keep working: they sit deeper in the tree, and the responder
+ * system offers the gesture to the deepest view first.
+ */
+export function SheetGrabZone({ children, style }: {
+  children: React.ReactNode
+  style?: ViewStyle
+}) {
+  const handlers = useContext(GrabHandlers)
+  return <View {...handlers} style={style}>{children}</View>
+}
+
+/**
  * Bottom sheet that can be flicked/dragged down to dismiss — the behaviour every
  * picker-style sheet should share. A grabber region at the top owns the pan gesture
  * so inner buttons/scrolls stay tappable. Children supply the sheet body (the white
@@ -83,14 +108,37 @@ function useReduceMotion() {
  * Release is decided by momentum projection rather than by a distance threshold, and every
  * animation starts from the sheet's live position, so a drag can be grabbed, reversed or
  * re-opened mid-flight without a jump.
+ *
+ * ── Why the gesture must be claimed on touch-DOWN inside a Modal (bug #60) ──
+ * RN's `Modal` puts `onStartShouldSetResponder: () => true` on its own host view, to stop
+ * responder events escaping the modal. Nothing deeper claims a touch that lands on plain
+ * content (a handle, a title), so the *modal host* becomes the responder. From then on the
+ * responder plugin only offers `onMoveShouldSetResponder` to the common ancestor of the
+ * responder and the touch target **and its ancestors** (`accumulateTwoPhaseDispatchesSingleSkipTarget`
+ * in the renderer) — that ancestor is the modal host, so every view *below* it, this sheet
+ * included, is never asked again. A move-only PanResponder inside a Modal is therefore dead
+ * unless the touch happens to start on a Pressable, which is precisely what the earlier
+ * "drag-to-close is unreliable" reports were: it worked from list rows and buttons, never
+ * from the handle.
+ *
+ * So: `grabPan` claims on touch-down and owns the grabber, any `SheetGrabZone`, and the whole
+ * sheet when `dragAnywhere` is set. `bodyPan` keeps the move-only claim for the rest, which
+ * still fires for drags that begin on an inner Pressable.
+ *
+ * `dragAnywhere` is opt-in rather than default because claiming on touch-down also blocks the
+ * native responder — an inner ScrollView could not scroll. Sheets with no scrollable content
+ * (Info, Confirm) set it; sheets with a list expose their header via `SheetGrabZone` instead.
  */
 export function DraggableSheet({
-  visible, onClose, children, contentStyle,
+  visible, onClose, children, contentStyle, dragAnywhere = false,
 }: {
   visible: boolean
   onClose: () => void
   children: React.ReactNode
   contentStyle?: ViewStyle
+  /** Let the whole sheet be dragged, not just the grabber. Only for sheets with no
+   *  scrollable content inside — see the responder note above. */
+  dragAnywhere?: boolean
 }) {
   const { height: screenH } = useWindowDimensions()
   const screenHRef = useRef(screenH)
@@ -240,8 +288,14 @@ export function DraggableSheet({
     }
   }, [fade, fadeTo, seat, translateY, travel])
 
-  const pan = useRef(
+  /**
+   * Both responders share every handler; they differ only in when they claim the gesture.
+   * `claimOnStart` takes it on touch-down (the only claim that survives RN's Modal — see
+   * the note above); the move-only variant is kept for drags that begin on a Pressable.
+   */
+  const createPan = (claimOnStart: boolean) =>
     PanResponder.create({
+      onStartShouldSetPanResponder: () => claimOnStart && exiting.current === null,
       // Only claim the gesture for a downward drag (lets horizontal/tap pass through),
       // and never once the sheet is already leaving.
       // No *Capture* variant on purpose: children get first refusal, so an inner
@@ -281,37 +335,41 @@ export function DraggableSheet({
       onPanResponderTerminate: () => {
         Animated.spring(translateY, { toValue: 0, ...RELEASE_SPRING, ...SEAT_REST }).start()
       },
-    }),
-  ).current
+    })
+
+  // Created once. Every handler above reads refs only, so neither can go stale.
+  const pans = useRef<{ body: PanResponderInstance; grab: PanResponderInstance } | null>(null)
+  if (pans.current === null) pans.current = { body: createPan(false), grab: createPan(true) }
+  const { body: bodyPan, grab: grabPan } = pans.current
 
   // Scrim tracks the sheet: opaque when seated, clear when fully dismissed — over the
   // sheet's own travel distance, so it reaches 0 exactly as the sheet clears the screen.
-  const backdropOpacity = Animated.multiply(
+  const backdropOpacity = useMemo(() => Animated.multiply(
     fade,
     Animated.divide(translateY, travel).interpolate({
       inputRange: [0, 1],
       outputRange: [1, 0],
       extrapolate: 'clamp',
     }),
-  )
+  ), [fade, translateY, travel])
 
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={dismiss}>
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} />
       </Animated.View>
-      {/* Pan handlers on the whole sheet (Instagram-style): dragging the handle,
-          title or any padding pulls the sheet down. Inner ScrollViews still win
-          the gesture for touches that start on them, so lists keep scrolling. */}
+      {/* The grabber — and any SheetGrabZone among the children — claims on touch-down;
+          the sheet itself keeps the move-only claim unless `dragAnywhere`. Inner
+          ScrollViews still win the touches that start on them, so lists keep scrolling. */}
       <Animated.View
-        {...pan.panHandlers}
+        {...(dragAnywhere ? grabPan : bodyPan).panHandlers}
         onLayout={onLayout}
         style={[styles.sheet, contentStyle, { opacity: fade, transform: [{ translateY }] }]}
       >
-        <View style={styles.grabber}>
+        <View {...grabPan.panHandlers} style={styles.grabber}>
           <View style={styles.handle} />
         </View>
-        {children}
+        <GrabHandlers.Provider value={grabPan.panHandlers}>{children}</GrabHandlers.Provider>
       </Animated.View>
     </Modal>
   )
