@@ -9,6 +9,7 @@ export const colors = {
   brandTint:  '#e6ece1', // pale sage — icon circles / soft fills
   sage:       '#A3B18A', // secondary UI (chips, tabs)
   accent:     '#C6A15B', // Brass Gold — CTA / badges / premium
+  accentDeep: '#8A6A28', // Brass, darkened so WHITE label text clears WCAG AA
 
   // Text — Stone Gray for body, near-black for headings
   ink:        '#0f172a',

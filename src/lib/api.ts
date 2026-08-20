@@ -7,6 +7,7 @@ import type {
   City, Locality, InquiryRequest, Amenity,
   PropertyCreateRequest, PropertyImage,
   SiteVisitBooking, BookSiteVisitRequest,
+  PublicProfile, ReportListingRequest, ReportListingResponse,
 } from '../types'
 
 const baseURL =
@@ -98,6 +99,10 @@ export const propertyApi = {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     )
   },
+  getSimilar:  (id: string)               => api.get<PropertyCard[]>(`/properties/${id}/similar`),
+  /** Report a listing. Public — works logged out; the server meters it at 5/hr per IP. */
+  report: (propertyId: string, data: ReportListingRequest) =>
+    api.post<ReportListingResponse>(`/properties/${propertyId}/reports`, data),
   uploadDocument: (
     propertyId: string,
     file: { uri: string; name: string; type: string },
@@ -114,6 +119,12 @@ export const propertyApi = {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     )
   },
+}
+
+// ── Users ───────────────────────────────────────────────────
+export const userApi = {
+  /** Public seller/agent profile. Carries no phone and no email by design. */
+  getPublicProfile: (id: string) => api.get<PublicProfile>(`/users/${id}/public`),
 }
 
 // ── Search support ──────────────────────────────────────────

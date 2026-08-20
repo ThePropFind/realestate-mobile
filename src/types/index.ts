@@ -13,6 +13,10 @@ export type FurnishingStatus = 'UNFURNISHED' | 'SEMI_FURNISHED' | 'FULLY_FURNISH
 export type PreferredTenant = 'FAMILY' | 'BACHELOR_MEN' | 'BACHELOR_WOMEN' | 'ANYONE'
 export type ListingStatus   = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'EXPIRED' | 'REJECTED' | 'SOLD_RENTED'
 export type PriceUnit       = 'TOTAL' | 'PER_MONTH' | 'PER_SQFT'
+export type PossessionStatus = 'READY_TO_MOVE' | 'UNDER_CONSTRUCTION' | 'NEW_LAUNCH'
+export type LandmarkKind    = 'HOSPITAL' | 'SCHOOL' | 'MALL' | 'TRANSPORT' | 'FOOD' | 'PARK' | 'TECH'
+export type ReportReason    = 'FRAUD_OR_SCAM' | 'ALREADY_SOLD_OR_RENTED' | 'INCORRECT_INFO'
+                            | 'DUPLICATE_LISTING' | 'OFFENSIVE_CONTENT' | 'OTHER'
 export type UserRole        = 'BUYER' | 'SELLER' | 'AGENT' | 'ADMIN'
 
 export interface UserInfo {
@@ -40,13 +44,29 @@ export interface PropertyCard {
 
 export interface PropertyImage { id: string; url: string; isPrimary: boolean; sortOrder: number }
 export interface Amenity       { id: string; name: string; category: string; iconKey: string }
-export interface OwnerInfo     { id: string; name: string; phone: string | null; profilePhotoUrl: string | null; role: UserRole; agencyName: string | null; avgRating: number | null }
+
+/**
+ * A curated nearby landmark (backend `locality_landmarks`, B3).
+ * `distanceLabel` is a string ("2.4 km"), not a number, on purpose — these are
+ * realistic but unsurveyed, and the type keeps the UI from presenting them as
+ * precise measurements.
+ */
+export interface NearbyPlace  { name: string; kind: LandmarkKind; distanceLabel: string }
+export interface OwnerInfo     { id: string; name: string; phone: string | null; profilePhotoUrl: string | null; role: UserRole
+  /** Email confirmed via OTP. NOT an identity check — never label this "Verified Owner". */
+  isEmailVerified: boolean
+  memberSince: string | null }
 
 export interface PropertyDocument {
-  id: string
   docType: 'FMB_SKETCH' | 'EC' | 'PATTA' | 'APPROVAL_LETTER' | 'OTHER'
-  url: string
   label: string | null
+  /**
+   * Present only on the owner endpoint (`/properties/{id}/my`). The public
+   * detail endpoint returns a summary with no id and no storage URL — docs
+   * hold owner PII and are readable only via an admin presigned download.
+   */
+  id?: string
+  url?: string
 }
 
 export interface PropertyDetail {
@@ -57,10 +77,20 @@ export interface PropertyDetail {
   floorNumber: number | null; areaSqft: number; carpetAreaSqft: number | null
   furnishing: FurnishingStatus; facing: string | null; ageOfProperty: number | null
   availableFrom: string | null; parkingAvailable: boolean
+  /** Null when the seller gave no count. Display rule: parkingCount ?? (parkingAvailable ? 1 : 0). */
+  parkingCount: number | null
+  possessionStatus: PossessionStatus | null
+  /** Human-readable listing reference, e.g. "PF000100000". Server-assigned. */
+  referenceCode: string | null
   preferredTenant: PreferredTenant | null
   addressLine: string | null
+  /** Six-digit PIN. Null on listings posted before it was collected (V16). */
+  pincode: string | null
   latitude: number | null; longitude: number | null; localityName: string; localitySlug: string
-  cityName: string; citySlug: string; isFeatured: boolean; isVerified: boolean
+  cityName: string; citySlug: string
+  /** State of `cityName` — the last line of the printed address. */
+  cityState: string | null
+  isFeatured: boolean; isVerified: boolean
   viewsCount: number; inquiryCount: number; images: PropertyImage[]; amenities: Amenity[]
   owner: OwnerInfo; createdAt: string; expiresAt: string
   // Phase B extensions
@@ -73,6 +103,30 @@ export interface PropertyDetail {
   promoterProjectName: string | null; promoterYearsExperience: number | null
   promoterTotalProjects: number | null; promoterCitiesActive: string | null; promoterReraId: string | null
   documents: PropertyDocument[] | null
+  /** Curated nearby places for this listing's locality. Never null server-side; may be empty. */
+  nearby: NearbyPlace[] | null
+}
+
+// ── Public owner profile (B5) ──────────────────────────────
+/**
+ * Mirrors PublicProfileResponse. Deliberately has no phone and no email —
+ * the endpoint is reachable without a token, and the owner's number already
+ * reaches buyers through the detail page's Call / WhatsApp CTAs.
+ */
+export interface PublicProfile {
+  id: string; name: string; role: UserRole; profilePhotoUrl: string | null
+  /** Email confirmed via OTP. NOT an identity check — never label this "Verified Owner". */
+  isEmailVerified: boolean
+  memberSince: string | null
+  activeListingCount: number
+  listings: PropertyCard[]
+}
+
+// ── Listing reports (B6) ───────────────────────────────────
+export interface ReportListingRequest  { reason: ReportReason; details?: string }
+export interface ReportListingResponse {
+  id: string; reason: ReportReason; status: 'OPEN' | 'REVIEWING' | 'ACTIONED' | 'DISMISSED'
+  createdAt: string
 }
 
 export interface SearchParams {
@@ -149,8 +203,11 @@ export interface PropertyCreateRequest {
   ageOfProperty?: number | null
   availableFrom?: string | null
   parkingAvailable?: boolean
+  parkingCount?: number
+  possessionStatus?: PossessionStatus
   preferredTenant?: PreferredTenant | null
   addressLine?: string
+  pincode?: string
   latitude?: number | null
   longitude?: number | null
   amenityIds?: string[]

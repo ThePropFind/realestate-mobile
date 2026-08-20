@@ -384,7 +384,35 @@ function Step3({ state, set, localities }: { state: WizardState; set: <K extends
             onChange={(v) => set('furnishing', v as WizardState['furnishing'])}
           />
           <FormField label="Age of property (years)" placeholder="0" keyboardType="numeric" value={state.ageOfProperty} onChangeText={(t) => set('ageOfProperty', t)} />
-          <Toggle label="Parking available" value={state.parkingAvailable} onChange={(v) => set('parkingAvailable', v)} />
+          <ChipRow
+            label="Possession"
+            options={[
+              { value: 'READY_TO_MOVE',      label: 'Ready to move' },
+              { value: 'UNDER_CONSTRUCTION', label: 'Under construction' },
+              { value: 'NEW_LAUNCH',         label: 'New launch' },
+            ]}
+            value={state.possessionStatus}
+            onChange={(v) => set('possessionStatus', v as WizardState['possessionStatus'])}
+          />
+          <Toggle
+            label="Parking available"
+            value={state.parkingAvailable}
+            onChange={(v) => {
+              set('parkingAvailable', v)
+              // Turning the toggle on seeds one slot — the common case — and
+              // turning it off clears the count so the two can never disagree.
+              set('parkingCount', v ? Math.max(state.parkingCount, 1) : 0)
+            }}
+          />
+          {state.parkingAvailable ? (
+            <Stepper
+              label="Parking slots"
+              value={state.parkingCount}
+              min={1}
+              max={20}
+              onChange={(n) => set('parkingCount', n)}
+            />
+          ) : null}
           {(state.listingType === 'RENT' || state.listingType === 'PG') ? (
             <ChipRow
               label="Preferred tenant"
@@ -501,6 +529,8 @@ function Step3({ state, set, localities }: { state: WizardState; set: <K extends
       </View>
 
       <FormField label="Full address *" placeholder="House number, street, landmark" value={state.addressLine} onChangeText={(t) => set('addressLine', t)} />
+
+      <FormField label="Pincode" placeholder="641012" value={state.pincode} onChangeText={(t) => set('pincode', t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" maxLength={6} />
 
       <MapPickerField state={state} set={set} />
     </View>
@@ -764,6 +794,44 @@ function Step6({ state, set }: { state: WizardState; set: <K extends keyof Wizar
 
 // ── Shared toggle ───────────────────────────────────────────
 
+/**
+ * Numeric stepper. Parking is a small count a seller knows exactly, so buttons
+ * beat a keyboard here — and the min/max clamp keeps it inside the backend's
+ * 0..20 check constraint (V12) without a validation round trip.
+ */
+function Stepper({
+  label, value, onChange, min = 0, max = 99,
+}: {
+  label: string; value: number; onChange: (v: number) => void; min?: number; max?: number
+}) {
+  return (
+    <View style={styles.toggleRow}>
+      <Text style={styles.toggleLabel}>{label}</Text>
+      <View style={styles.stepper}>
+        <Pressable
+          onPress={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          hitSlop={6}
+          accessibilityLabel={`Decrease ${label}`}
+          style={({ pressed }) => [styles.stepBtn, (value <= min || pressed) && { opacity: 0.4 }]}
+        >
+          <Ionicons name="remove" size={18} color={BRAND} />
+        </Pressable>
+        <Text style={styles.stepValue}>{value}</Text>
+        <Pressable
+          onPress={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          hitSlop={6}
+          accessibilityLabel={`Increase ${label}`}
+          style={({ pressed }) => [styles.stepBtn, (value >= max || pressed) && { opacity: 0.4 }]}
+        >
+          <Ionicons name="add" size={18} color={BRAND} />
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
     <View style={styles.toggleRow}>
@@ -832,6 +900,14 @@ const styles = StyleSheet.create({
 
   toggleRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10 },
   toggleLabel:    { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: '#334155' },
+  stepper:        { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stepBtn:        {
+    width: 32, height: 32, borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  // Fixed-width box — explicit lineHeight (includeFontPadding is off app-wide).
+  stepValue:      { minWidth: 30, textAlign: 'center', fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.ink },
 
   backLink:       { alignItems: 'center', paddingVertical: 14 },
   backLinkText:   { fontFamily: fonts.semibold, color: colors.muted, fontSize: 13 },

@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   header:         { alignItems: 'center', paddingBottom: 30, backgroundColor: colors.brand },
   avatar:         { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', marginBottom: 12, ...shadow.card },
   avatarText:     { color: colors.brand, fontFamily: fonts.extra, fontSize: 30 },
-  name:           { fontFamily: fonts.display, fontSize: 19, lineHeight: 25, color: colors.white },
+  name:           { fontFamily: fonts.bold, fontSize: 19, lineHeight: 25, color: colors.white },
   email:          { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 3 },
   roleChip:       { fontFamily: fonts.bold, fontSize: 10, color: colors.white, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, marginTop: 10, overflow: 'hidden', letterSpacing: 0.5 },
 
