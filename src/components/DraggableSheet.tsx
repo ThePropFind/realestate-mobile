@@ -46,9 +46,15 @@ const project = (vy: number) => vy * (DECELERATION / (1 - DECELERATION))
  * Progressive resistance past a boundary (Apple's rubber-band curve): the further you
  * pull, the less the sheet follows, asymptotically. A flat multiplier resists evenly,
  * which reads as a slipping surface rather than a stretching one.
+ *
+ * `dimension` is what the pull asymptotes to, so it is the *allowance*, not the size of
+ * the thing being pulled: passing the sheet's own height let it be hauled a sheet-height
+ * above its seat, which is nobody's idea of a boundary.
  */
 const rubberband = (overshoot: number, dimension: number, constant = 0.55) =>
   (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot))
+/** How far above its seat the sheet can be pulled before it simply will not go further. */
+const OVER_DRAG_PX = 56
 
 /** OS "Reduce Motion" setting, kept live (users can flip it while the app is open). */
 function useReduceMotion() {
@@ -179,10 +185,23 @@ export function DraggableSheet({
   // grab mid-entrance continues from that point instead of snapping. Costs one event per
   // frame of native-driven animation only (~20 per open), never during a drag.
   const currentY = useRef(screenH)
+
+  /** Jump the sheet, keeping the mirror exact without waiting on a native round trip. */
+  const setY = useCallback((v: number) => {
+    currentY.current = v
+    translateY.setValue(v)
+  }, [translateY])
+
+  // Re-attached on every open, not once: when the Modal unmounts, translateY's last child
+  // detaches, and `AnimatedNode.__detach` calls `removeAllListeners()` — RN drops this
+  // listener out from under us. Attached once, the mirror froze after the first close at
+  // whatever value it held while dismissing (≈ the sheet's height), and the next *tap*
+  // released against that stale offset, read as a completed drag, and dismissed the sheet.
   useEffect(() => {
+    if (!mounted) return
     const id = translateY.addListener(({ value }) => { currentY.current = value })
     return () => translateY.removeListener(id)
-  }, [translateY])
+  }, [mounted, translateY])
 
   const fadeTo = useCallback((toValue: number, done?: (r: { finished: boolean }) => void) => {
     Animated.timing(fade, {
@@ -240,9 +259,11 @@ export function DraggableSheet({
     }
   }, [fadeTo, setMountedState, translateY])
 
-  // The PanResponder is created once, so it reaches the current runExit through a ref.
+  // The PanResponder is created once, so it reaches the current runExit/setY through refs.
   const runExitRef = useRef(runExit)
   runExitRef.current = runExit
+  const setYRef = useRef(setY)
+  setYRef.current = setY
 
   /** Backdrop tap / Android back: play the exit, then tell the parent. */
   const dismiss = useCallback(() => runExit({ notify: true }), [runExit])
@@ -259,14 +280,14 @@ export function DraggableSheet({
       setMountedState(true)
       // Park off-screen (the screen height always clears a bottom-anchored sheet) until
       // onLayout measures the sheet; the entrance starts from there.
-      translateY.setValue(screenHRef.current)
+      setY(screenHRef.current)
       pendingEnter.current = true
     } else if (mountedRef.current) {
       runExit()
     }
     // Keyed on `visible` only. Everything else this reads lives in a ref precisely so
     // that internal state changes can't re-enter and restart the animation.
-  }, [visible, fadeTo, runExit, seat, setMountedState, translateY])
+  }, [visible, fadeTo, runExit, seat, setMountedState, setY])
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height
@@ -278,15 +299,15 @@ export function DraggableSheet({
     if (reduceMotionRef.current) {
       // Reduce Motion: no positional slide. The sheet sits where it belongs and both it
       // and the scrim fade up — movement dropped, the state change still explained.
-      translateY.setValue(0)
+      setY(0)
       fade.setValue(0)
       fadeTo(1)
     } else {
       fade.setValue(1)
-      translateY.setValue(h)
+      setY(h)
       seat()
     }
-  }, [fade, fadeTo, seat, translateY, travel])
+  }, [fade, fadeTo, seat, setY, travel])
 
   /**
    * Both responders share every handler; they differ only in when they claim the gesture.
@@ -311,7 +332,7 @@ export function DraggableSheet({
         const next = dragFrom.current + g.dy
         // Dragging up past the seated position resists progressively instead of
         // stopping dead against an invisible wall.
-        translateY.setValue(next > 0 ? next : rubberband(next, sheetH.current || screenHRef.current))
+        setYRef.current(next > 0 ? next : rubberband(next, OVER_DRAG_PX))
       },
       onPanResponderRelease: (_, g) => {
         // Decide on where the gesture was *going*, not where the finger happened to stop:
@@ -320,7 +341,10 @@ export function DraggableSheet({
         // case right for free — drag far, flick back up, and the projection lands short,
         // so the sheet seats instead of dismissing against the user's intent.
         const projected = currentY.current + project(g.vy)
-        if (projected > commitDistance()) {
+        // A tap grants and releases like any other gesture, with no movement in it. Nothing
+        // that never went downwards may dismiss, whatever the projection says.
+        const wentDown = g.dy > 0 || g.vy > 0
+        if (wentDown && projected > commitDistance()) {
           runExitRef.current({ velocity: Math.max(g.vy, 0), notify: true })
         } else {
           // Snap back carrying the release velocity, so letting go mid-drag continues the
