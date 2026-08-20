@@ -43,18 +43,15 @@ const DECELERATION = 0.998
 const project = (vy: number) => vy * (DECELERATION / (1 - DECELERATION))
 
 /**
- * Progressive resistance past a boundary (Apple's rubber-band curve): the further you
- * pull, the less the sheet follows, asymptotically. A flat multiplier resists evenly,
- * which reads as a slipping surface rather than a stretching one.
+ * The seat is a hard floor for upward drags — no rubber-band give.
  *
- * `dimension` is what the pull asymptotes to, so it is the *allowance*, not the size of
- * the thing being pulled: passing the sheet's own height let it be hauled a sheet-height
- * above its seat, which is nobody's idea of a boundary.
+ * Elasticity at a boundary is a promise that there is something beyond it: pull a scroll
+ * view past its end and the bounce says "this is the end". These sheets are content-sized
+ * and cannot expand, so there is nothing above the seat to reveal, and the give was read
+ * as the sheet coming loose. The floor is honest about the fact that up is not a direction
+ * this sheet moves in.
  */
-const rubberband = (overshoot: number, dimension: number, constant = 0.55) =>
-  (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot))
-/** How far above its seat the sheet can be pulled before it simply will not go further. */
-const OVER_DRAG_PX = 56
+const clampToSeat = (y: number) => (y > 0 ? y : 0)
 
 /** OS "Reduce Motion" setting, kept live (users can flip it while the app is open). */
 function useReduceMotion() {
@@ -329,10 +326,10 @@ export function DraggableSheet({
         translateY.stopAnimation()
       },
       onPanResponderMove: (_, g) => {
-        const next = dragFrom.current + g.dy
-        // Dragging up past the seated position resists progressively instead of
-        // stopping dead against an invisible wall.
-        setYRef.current(next > 0 ? next : rubberband(next, OVER_DRAG_PX))
+        // Tracks the finger below the seat and stops flat at it. Because the offset keeps
+        // accumulating while clamped, dragging back down picks the sheet up exactly where
+        // the finger left it rather than from wherever the clamp was holding.
+        setYRef.current(clampToSeat(dragFrom.current + g.dy))
       },
       onPanResponderRelease: (_, g) => {
         // Decide on where the gesture was *going*, not where the finger happened to stop:
