@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '../Text'
-import { colors, fonts, spacing } from '../../theme'
+import { colors, fonts, radius, spacing } from '../../theme'
 import {
   SQFT_PER_CENT, approvalShort, listingTypeLabel, parkingLabel,
   possessionLabel, prettyEnum,
@@ -34,11 +34,15 @@ export function PropertyDetailsGrid({ data }: { data: PropertyDetail }) {
     <View style={styles.grid}>
       {rows.map((r) => (
         <View key={r.key} style={styles.cell}>
-          <View style={styles.head}>
-            <Ionicons name={r.icon} size={13} color={colors.muted} />
-            <Text style={styles.label} numberOfLines={1}>{r.label}</Text>
+          <View style={styles.iconBox}>
+            {/* Brand, not muted — muted grey all but disappears against the
+                colors.bg fill behind it. */}
+            <Ionicons name={r.icon} size={15} color={colors.brand} />
           </View>
-          <Text style={styles.value} numberOfLines={2}>{r.value}</Text>
+          <View style={styles.text}>
+            <Text style={styles.label} numberOfLines={1}>{r.label}</Text>
+            <Text style={styles.value} numberOfLines={2}>{r.value}</Text>
+          </View>
         </View>
       ))}
     </View>
@@ -113,9 +117,19 @@ function rowsFor(data: PropertyDetail): Row[] {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.lg, columnGap: spacing.md },
-  cell: { width: '47%' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  label: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.muted, flex: 1 },
-  value: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.ink, marginTop: 3 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.lg },
+  // 50% + inner padding, not 47% + columnGap: the percentage rounds badly against
+  // a columnGap and can collapse the grid to a single column on some densities.
+  cell: {
+    width: '50%', flexDirection: 'row', alignItems: 'center',
+    gap: spacing.sm, paddingRight: spacing.sm,
+  },
+  iconBox: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    backgroundColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  text:  { flex: 1, minWidth: 0 },
+  label: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 14, color: colors.muted },
+  value: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, color: colors.ink },
 })

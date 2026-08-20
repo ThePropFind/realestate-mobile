@@ -1,9 +1,9 @@
 import { StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '../Text'
-import { colors, fonts, radius, spacing } from '../../theme'
+import { colors, fonts, spacing } from '../../theme'
 import {
-  SQFT_PER_CENT, approvalShort, parkingLabel, prettyEnum,
+  SQFT_PER_CENT, approvalShort, parkingSlots, prettyEnum,
 } from '../../lib/format'
 import type { PropertyDetail } from '../../types'
 
@@ -24,6 +24,26 @@ export type SpecKey =
 export type SpecCell = { key: SpecKey; icon: IconName; label: string; value: string }
 
 /**
+ * Short forms for the strip only. A cell gives the value ~46dp; "Independent
+ * House" needs ~119dp, so the full name would overflow into its neighbours and
+ * make five equal cells look unequal. The unabbreviated name still appears in
+ * PropertyDetailsGrid wherever the strip has not already covered that key.
+ */
+const SHORT_TYPE: Partial<Record<PropertyDetail['propertyType'], string>> = {
+  APARTMENT:         'Flat',
+  INDEPENDENT_HOUSE: 'House',
+  BUILDER_FLOOR:     'Floor',
+  COMMERCIAL_OFFICE: 'Office',
+  COMMERCIAL_SHOP:   'Shop',
+  PG_HOSTEL:         'PG',
+  AGRICULTURAL_LAND: 'Land',
+}
+
+function shortType(t: PropertyDetail['propertyType']): string {
+  return SHORT_TYPE[t] ?? prettyEnum(t)
+}
+
+/**
  * ③ The branch table. The mockup's 5-cell strip is the *residential* case; the app
  * also serves PLOT, AGRICULTURAL_LAND and COMMERCIAL, and each needs its own five
  * facts — sq.ft alone tells a farmland buyer nothing.
@@ -34,27 +54,28 @@ export type SpecCell = { key: SpecKey; icon: IconName; label: string; value: str
 export function keySpecCells(data: PropertyDetail): SpecCell[] {
   const t = data.propertyType
   const sqft: SpecCell = {
-    key: 'area', icon: 'resize-outline', label: 'Built-up', value: `${fmtNum(data.areaSqft)} sq.ft`,
+    key: 'area', icon: 'resize-outline', label: 'sq.ft', value: fmtNum(data.areaSqft),
   }
+  const slots = parkingSlots(data.parkingCount, data.parkingAvailable)
   const parking: SpecCell = {
-    key: 'parking', icon: 'car-outline', label: 'Parking',
-    value: parkingLabel(data.parkingCount, data.parkingAvailable),
+    key: 'parking', icon: 'car-outline', label: 'Car Parking',
+    value: slots === 0 ? 'None' : `${slots}`,
   }
   const propertyType: SpecCell = {
-    key: 'propertyType', icon: 'home-outline', label: 'Type', value: prettyEnum(t),
+    key: 'propertyType', icon: 'home-outline', label: 'Property Type', value: shortType(t),
   }
 
   if (t === 'PLOT') {
     const cents = data.plotAreaCents ?? data.areaSqft / SQFT_PER_CENT
     return [
-      { key: 'area', icon: 'resize-outline', label: 'Plot Area', value: `${cents.toFixed(1)} cents` },
+      { key: 'area', icon: 'resize-outline', label: 'Cents', value: cents.toFixed(1) },
       {
-        key: 'dimensions', icon: 'scan-outline', label: 'Dimensions',
+        key: 'dimensions', icon: 'scan-outline', label: 'Dimensions (ft)',
         value: data.plotLengthFt && data.plotBreadthFt
-          ? `${fmtNum(data.plotLengthFt)}×${fmtNum(data.plotBreadthFt)} ft`
+          ? `${fmtNum(data.plotLengthFt)}×${fmtNum(data.plotBreadthFt)}`
           : '—',
       },
-      { ...sqft, label: 'Area' },
+      sqft,
       { key: 'approval', icon: 'document-text-outline', label: 'Approval', value: approvalShort(data.approvalAuthority) },
       { key: 'facing', icon: 'compass-outline', label: 'Facing', value: data.facing || '—' },
     ]
@@ -64,13 +85,12 @@ export function keySpecCells(data: PropertyDetail): SpecCell[] {
     const cents = data.plotAreaCents ?? data.areaSqft / SQFT_PER_CENT
     const acres = cents / 100
     return [
-      {
-        key: 'area', icon: 'resize-outline', label: 'Land Area',
-        value: acres >= 1 ? `${acres.toFixed(2)} acres` : `${cents.toFixed(1)} cents`,
-      },
+      acres >= 1
+        ? { key: 'area', icon: 'resize-outline', label: 'Acres', value: acres.toFixed(2) }
+        : { key: 'area', icon: 'resize-outline', label: 'Cents', value: cents.toFixed(1) },
       { key: 'water', icon: 'water-outline', label: 'Water', value: data.waterSource ? prettyEnum(data.waterSource) : '—' },
       { key: 'soil', icon: 'leaf-outline', label: 'Soil', value: data.soilType ? prettyEnum(data.soilType) : '—' },
-      { ...sqft, label: 'Area' },
+      sqft,
       {
         key: 'fenced', icon: 'shield-outline', label: 'Fenced',
         value: data.fenced == null ? '—' : data.fenced ? 'Yes' : 'No',
@@ -84,10 +104,10 @@ export function keySpecCells(data: PropertyDetail): SpecCell[] {
       {
         key: 'floor', icon: 'layers-outline', label: 'Floor',
         value: data.floorNumber != null
-          ? `${data.floorNumber}${data.totalFloors != null ? ` of ${data.totalFloors}` : ''}`
+          ? `${data.floorNumber}${data.totalFloors != null ? `/${data.totalFloors}` : ''}`
           : '—',
       },
-      { key: 'furnishing', icon: 'cube-outline', label: 'Furnishing', value: prettyEnum(data.furnishing) },
+      { key: 'furnishing', icon: 'cube-outline', label: 'Furnishing', value: furnishShort(data.furnishing) },
       propertyType,
       parking,
     ]
@@ -96,8 +116,8 @@ export function keySpecCells(data: PropertyDetail): SpecCell[] {
   // Residential / PG
   return [
     {
-      key: 'bedrooms', icon: 'bed-outline', label: 'Bedrooms',
-      value: data.bedrooms != null ? `${data.bedrooms} BHK` : 'PG',
+      key: 'bedrooms', icon: 'bed-outline', label: 'BHK',
+      value: data.bedrooms != null ? `${data.bedrooms}` : '—',
     },
     {
       key: 'bathrooms', icon: 'water-outline', label: 'Bathrooms',
@@ -110,25 +130,37 @@ export function keySpecCells(data: PropertyDetail): SpecCell[] {
 }
 
 /**
- * Laid out as a wrap grid of 3 per row (5 cells = 3 + 2) rather than a horizontal
- * scroll: a scrolling strip hides cells behind a gesture nobody knows is there, and
- * these five facts are the ones a buyer scans before deciding to keep reading.
+ * One flat row of five, per the mockup: icon and value share a line, the unit sits
+ * underneath as the label, and there are no dividers between cells.
+ *
+ * Not a scroll and not a wrap grid — a scrolling strip hides cells behind a gesture
+ * nobody knows is there, and these five facts are the ones a buyer scans before
+ * deciding to keep reading, so all five have to be visible at once.
  */
 export function KeySpecStrip({ data }: { data: PropertyDetail }) {
   const cells = keySpecCells(data)
   return (
-    <View style={styles.grid}>
+    <View style={styles.row}>
       {cells.map((c) => (
         <View key={c.key} style={styles.cell}>
-          <View style={styles.iconWrap}>
-            <Ionicons name={c.icon} size={16} color={colors.brand} />
+          <View style={styles.top}>
+            <Ionicons name={c.icon} size={15} color={colors.ink} />
+            {/* No adjustsFontSizeToFit — on Android it is per-Text, so five cells
+                would render at five different sizes. */}
+            <Text style={styles.value} numberOfLines={1}>{c.value}</Text>
           </View>
-          <Text style={styles.value} numberOfLines={1}>{c.value}</Text>
           <Text style={styles.label} numberOfLines={1}>{c.label}</Text>
         </View>
       ))}
     </View>
   )
+}
+
+/** SEMI_FURNISHED → "Semi" — same ~46dp cell budget as SHORT_TYPE. */
+function furnishShort(f: PropertyDetail['furnishing']): string {
+  if (f === 'SEMI_FURNISHED')  return 'Semi'
+  if (f === 'FULLY_FURNISHED') return 'Full'
+  return 'None'
 }
 
 /** 1938 → "1,938"; 30.5 → "30.5". Areas are decimals in the DTO but usually whole. */
@@ -137,23 +169,19 @@ function fmtNum(n: number): string {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  cell: {
-    // 3 per row, accounting for the two 8px gaps between them.
-    width: '31.6%',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: 4,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
+  // Small negative bleed buys back the width the longest labels ("Property Type",
+  // "Car Parking") need to sit on one line across five cells.
+  row: { flexDirection: 'row', marginHorizontal: -spacing.sm },
+  cell: { flex: 1, minWidth: 0, alignItems: 'center', paddingHorizontal: 2 },
+  // maxWidth + flexShrink on the value: without both, a long value lays out at its
+  // natural width and spills over the neighbouring cells, so five equal-width
+  // cells read as five different widths.
+  top: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
+  // Value and label are split so the unit lives in the label ("1938" / "sq.ft"),
+  // matching the mockup rather than cramming "1938 sq.ft" into one line.
+  value: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18, color: colors.ink, flexShrink: 1 },
+  label: {
+    fontFamily: fonts.medium, fontSize: 10, lineHeight: 14,
+    color: colors.muted, textAlign: 'center', marginTop: 3,
   },
-  iconWrap: {
-    width: 30, height: 30, borderRadius: radius.pill,
-    backgroundColor: colors.brandTint,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6,
-  },
-  // Playfair in a stat slot; explicit lineHeight because the cell is fixed-height.
-  value: { fontFamily: fonts.displaySemi, fontSize: 14, lineHeight: 19, color: colors.ink },
-  label: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.muted, marginTop: 1 },
 })

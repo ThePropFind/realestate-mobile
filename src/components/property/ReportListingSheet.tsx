@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: radius.pill,
     backgroundColor: '#fdf3f3', alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontFamily: fonts.display, fontSize: 19, lineHeight: 26, color: colors.ink },
+  title: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 26, color: colors.ink },
   sub:   { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: spacing.sm },
   scroll: { marginTop: spacing.lg },
 

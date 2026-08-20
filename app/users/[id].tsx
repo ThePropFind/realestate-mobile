@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
   },
-  headerTitle: { fontFamily: fonts.displaySemi, fontSize: 17, lineHeight: 24, color: colors.ink },
+  headerTitle: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 24, color: colors.ink },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
   errorText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
@@ -161,8 +161,8 @@ const styles = StyleSheet.create({
   identity: { alignItems: 'center' },
   avatar: { width: 76, height: 76, borderRadius: radius.pill },
   avatarFallback: { backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: fonts.display, fontSize: 30, lineHeight: 38, color: colors.brand },
-  name: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.ink, marginTop: spacing.md, textAlign: 'center' },
+  avatarText: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 38, color: colors.brand },
+  name: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 28, color: colors.ink, marginTop: spacing.md, textAlign: 'center' },
   role: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, color: colors.muted, marginTop: 2 },
 
   stats: {
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: spacing.lg,
   },
   stat: { flex: 1, alignItems: 'center' },
-  statValue: { fontFamily: fonts.displaySemi, fontSize: 15, lineHeight: 21, color: colors.brand },
+  statValue: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.brand },
   statLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.muted, marginTop: 2 },
 
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginTop: spacing.lg },

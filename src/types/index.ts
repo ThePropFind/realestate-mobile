@@ -84,8 +84,13 @@ export interface PropertyDetail {
   referenceCode: string | null
   preferredTenant: PreferredTenant | null
   addressLine: string | null
+  /** Six-digit PIN. Null on listings posted before it was collected (V16). */
+  pincode: string | null
   latitude: number | null; longitude: number | null; localityName: string; localitySlug: string
-  cityName: string; citySlug: string; isFeatured: boolean; isVerified: boolean
+  cityName: string; citySlug: string
+  /** State of `cityName` — the last line of the printed address. */
+  cityState: string | null
+  isFeatured: boolean; isVerified: boolean
   viewsCount: number; inquiryCount: number; images: PropertyImage[]; amenities: Amenity[]
   owner: OwnerInfo; createdAt: string; expiresAt: string
   // Phase B extensions
@@ -202,6 +207,7 @@ export interface PropertyCreateRequest {
   possessionStatus?: PossessionStatus
   preferredTenant?: PreferredTenant | null
   addressLine?: string
+  pincode?: string
   latitude?: number | null
   longitude?: number | null
   amenityIds?: string[]

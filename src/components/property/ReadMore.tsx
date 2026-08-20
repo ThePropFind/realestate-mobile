@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { Text } from '../Text'
+import { Ionicons } from '@expo/vector-icons'
 import { colors, fonts, typography } from '../../theme'
 
 /**
@@ -28,7 +29,10 @@ export function ReadMore({ text, lines = 5 }: { text: string; lines?: number }) 
       </Text>
       {truncated ? (
         <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8} style={styles.toggle}>
-          <Text style={styles.toggleText}>{expanded ? 'Read less' : 'Read more'}</Text>
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleText}>{expanded ? 'Read Less' : 'Read More'}</Text>
+            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={colors.brand} />
+          </View>
         </Pressable>
       ) : null}
     </>
@@ -38,5 +42,6 @@ export function ReadMore({ text, lines = 5 }: { text: string; lines?: number }) 
 const styles = StyleSheet.create({
   body: { ...typography.body, fontSize: 14, lineHeight: 22 },
   toggle: { marginTop: 8, alignSelf: 'flex-start' },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   toggleText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.brand },
 })

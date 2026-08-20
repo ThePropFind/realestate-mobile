@@ -530,6 +530,8 @@ function Step3({ state, set, localities }: { state: WizardState; set: <K extends
 
       <FormField label="Full address *" placeholder="House number, street, landmark" value={state.addressLine} onChangeText={(t) => set('addressLine', t)} />
 
+      <FormField label="Pincode" placeholder="641012" value={state.pincode} onChangeText={(t) => set('pincode', t.replace(/[^0-9]/g, ''))} keyboardType="number-pad" maxLength={6} />
+
       <MapPickerField state={state} set={set} />
     </View>
   )

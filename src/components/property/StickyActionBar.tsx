@@ -49,8 +49,13 @@ const styles = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
     paddingVertical: 13, borderRadius: radius.sm,
   },
-  outline: { borderWidth: 1, borderColor: colors.brand, backgroundColor: colors.white },
-  primary: { backgroundColor: colors.brand, flex: 1.2 },
+  // Grey border, brand icon and label — a brand-green outline on both secondary
+  // buttons competed with the gold primary for the eye.
+  outline: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  // accentDeep, not accent: the mockup puts a WHITE label on the brass, and white
+  // on #C6A15B is ~2.1:1 — well under WCAG AA. Deepening the gold carries the
+  // design intent and gets white to ~4.6:1.
+  primary: { backgroundColor: colors.accentDeep, flex: 1.2 },
   pressed: { opacity: 0.85 },
   // Fixed-height button — explicit lineHeight (includeFontPadding is off app-wide).
   label: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18 },

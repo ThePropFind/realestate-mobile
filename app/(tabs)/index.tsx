@@ -354,10 +354,13 @@ function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { pr
       )}
       {property ? (
         <>
-          {/* Featured / Verified badge, top-left */}
-          <View style={[styles.featuredBadge, property.isFeatured && styles.featuredBadgePremium]}>
-            <Text style={styles.featuredBadgeText}>{property.isFeatured ? 'Featured' : 'Verified'}</Text>
-          </View>
+          {/* Featured badge, top-left. Verification is a separate fact and is stated
+              once, by the pill below — never inferred from "not featured". */}
+          {property.isFeatured ? (
+            <View style={[styles.featuredBadge, styles.featuredBadgePremium]}>
+              <Text style={styles.featuredBadgeText}>Featured</Text>
+            </View>
+          ) : null}
           {/* Heart, top-right — frosted circle per the Green Growth mock */}
           <Pressable
             onPress={() => onToggleSave(property.id)}
@@ -448,7 +451,7 @@ const styles = StyleSheet.create({
   header:            { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'transparent' },
   topBarInner:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 12 },
   locationPill:      { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  locationCity:      { color: '#fff', fontFamily: fonts.display, fontSize: 19, lineHeight: 25 },
+  locationCity:      { color: '#fff', fontFamily: fonts.bold, fontSize: 19, lineHeight: 25 },
   bellBtn:           { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   bellDot:           { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent, position: 'absolute', top: 7, right: 7, borderWidth: 1.5, borderColor: colors.brand },
 
@@ -458,7 +461,7 @@ const styles = StyleSheet.create({
   heroOverlay:       { position: 'absolute', left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
   heroOverlayScrim:  { position: 'absolute', left: 0, right: 0, bottom: 0, height: 200 },
   heroContent:       { paddingHorizontal: 22, paddingBottom: 34 },
-  heroHeadline:      { fontFamily: fonts.display, fontSize: 32, lineHeight: 40, color: colors.white },
+  heroHeadline:      { fontFamily: fonts.bold, fontSize: 32, lineHeight: 40, color: colors.white },
   heroHeadlineAccent:{ color: colors.accent },
   trustLine:         { fontFamily: fonts.semibold, fontSize: 13, color: 'rgba(255,255,255,0.92)', marginTop: 10 },
 
@@ -482,7 +485,7 @@ const styles = StyleSheet.create({
   // Trust / stats card
   statsCard:         { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, marginHorizontal: 16, marginTop: 20, marginBottom: 18, borderRadius: radius.lg, paddingVertical: 18, borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   stat:              { flex: 1, alignItems: 'center', gap: 5 },
-  statValue:         { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
+  statValue:         { fontFamily: fonts.bold, fontSize: 18, color: colors.ink },
   statLabel:         { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },
   statDivider:       { width: 1, height: 40, backgroundColor: colors.borderLight },
 

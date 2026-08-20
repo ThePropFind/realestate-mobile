@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, radius, shadow, spacing } from '../../theme'
 
 /**
- * Back · Share · Favourite, floating over the gallery.
+ * Back · Favourite · Share, floating over the gallery.
  *
  * The heart is controlled — the screen owns the optimistic toggle and its revert,
  * so this component never guesses at saved state.
@@ -21,13 +21,13 @@ export function FloatingHeader({
     <View style={[styles.bar, { top: top + spacing.sm }]} pointerEvents="box-none">
       <RoundButton icon="arrow-back" onPress={onBack} label="Go back" />
       <View style={styles.right}>
-        <RoundButton icon="share-social-outline" onPress={onShare} label="Share this listing" />
         <RoundButton
           icon={liked ? 'heart' : 'heart-outline'}
           tint={liked ? colors.accent : colors.ink}
           onPress={onToggleLike}
           label={liked ? 'Remove from saved' : 'Save this listing'}
         />
+        <RoundButton icon="share-social-outline" onPress={onShare} label="Share this listing" />
       </View>
     </View>
   )

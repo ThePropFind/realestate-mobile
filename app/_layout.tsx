@@ -12,10 +12,6 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans'
-import {
-  PlayfairDisplay_600SemiBold,
-  PlayfairDisplay_700Bold,
-} from '@expo-google-fonts/playfair-display'
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { useAuthStore } from '../src/store/authStore'
@@ -57,8 +53,6 @@ function RootLayout() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
-    PlayfairDisplay_600SemiBold,
-    PlayfairDisplay_700Bold,
   })
 
   useEffect(() => { void hydrate() }, [hydrate])

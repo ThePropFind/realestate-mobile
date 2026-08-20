@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   image:   { width: '100%', height: 110, backgroundColor: colors.border },
   noImage: { alignItems: 'center', justifyContent: 'center' },
   body:    { padding: spacing.md, gap: 2 },
-  price:   { fontFamily: fonts.displaySemi, fontSize: 15, lineHeight: 21, color: colors.brand },
+  price:   { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.brand },
   title:   { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 17, color: colors.ink },
   meta:    { fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.muted },
 })

@@ -33,6 +33,7 @@ export type WizardState = {
   areaSqft:     string
   localityId:   string | null
   addressLine:  string
+  pincode:      string
   latitude:     number | null
   longitude:    number | null
 
@@ -103,6 +104,7 @@ export const initialWizardState: WizardState = {
   areaSqft: '',
   localityId: null,
   addressLine: '',
+  pincode: '',
   latitude: null,
   longitude: null,
 
@@ -262,6 +264,7 @@ export function buildCreateRequest(s: WizardState): PropertyCreateRequest {
     possessionStatus: isBuilding(s) && s.possessionStatus ? s.possessionStatus : undefined,
     preferredTenant: (s.listingType === 'RENT' || s.listingType === 'PG') ? s.preferredTenant : null,
     addressLine: s.addressLine || undefined,
+    pincode: s.pincode.trim() || undefined,
     latitude: s.latitude,
     longitude: s.longitude,
     amenityIds: s.amenityIds.length ? s.amenityIds : undefined,

@@ -3,48 +3,56 @@ import { Ionicons } from '@expo/vector-icons'
 import { Text } from '../Text'
 import { colors, fonts, radius, spacing } from '../../theme'
 
-const TIPS = [
-  'Never pay an advance or token amount before visiting the property in person.',
-  'Verify the original documents — patta, EC and approval — before any payment.',
-  'PropFind never asks for money on behalf of an owner or agent.',
-]
-
 /**
  * ⑩ Safety & reporting.
  *
- * The tips are deliberately generic anti-fraud advice, not claims about this
+ * The advice is deliberately generic anti-fraud guidance, not a claim about this
  * listing — the platform cannot vouch for a seller it has not met.
+ *
+ * The report control is grey, not danger red: a red button at the bottom of every
+ * listing reads as an alarm and invites misfires from people who only meant to
+ * scroll. It is a 44dp row so it is still comfortably tappable.
  */
 export function SafetySection({ onReport }: { onReport: () => void }) {
   return (
-    <View>
-      {TIPS.map((tip) => (
-        <View key={tip} style={styles.tipRow}>
-          <Ionicons name="shield-checkmark-outline" size={15} color={colors.brand} style={styles.tipIcon} />
-          <Text style={styles.tipText}>{tip}</Text>
-        </View>
-      ))}
+    <View style={styles.box}>
+      <View style={styles.head}>
+        <Ionicons name="shield-checkmark-outline" size={20} color={colors.brand} />
+        <Text style={styles.heading}>Stay safe</Text>
+      </View>
+      <Text style={styles.body}>
+        Never pay an advance or token amount before visiting the property in person,
+        and check the original patta, EC and approval papers before any payment.
+        PropFind never asks for money on behalf of an owner or agent.
+      </Text>
 
       <Pressable
         onPress={onReport}
-        style={({ pressed }) => [styles.reportBtn, pressed && { opacity: 0.8 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Report this listing"
+        style={({ pressed }) => [styles.reportRow, pressed && { opacity: 0.7 }]}
       >
-        <Ionicons name="flag-outline" size={15} color={colors.danger} />
+        <Ionicons name="flag-outline" size={15} color={colors.muted} />
         <Text style={styles.reportText}>Report this listing</Text>
+        <Ionicons name="chevron-forward" size={15} color={colors.mutedLight} />
       </Pressable>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  tipRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, paddingVertical: 6 },
-  tipIcon: { marginTop: 2 },
-  tipText: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.muted, flex: 1 },
-
-  reportBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    marginTop: spacing.md, paddingVertical: 11,
-    borderRadius: radius.sm, borderWidth: 1, borderColor: '#f3d3d3', backgroundColor: '#fdf3f3',
+  box: {
+    borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.sm,
+    backgroundColor: colors.bg, padding: spacing.md,
   },
-  reportText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.danger },
+  head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  heading: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 18, color: colors.ink },
+  body: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 6 },
+
+  reportRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    minHeight: 44, marginTop: spacing.md, paddingTop: spacing.md,
+    borderTopWidth: 1, borderTopColor: colors.borderLight,
+  },
+  reportText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.muted, flex: 1 },
 })

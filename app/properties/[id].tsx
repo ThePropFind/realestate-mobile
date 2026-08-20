@@ -11,7 +11,7 @@ import { appAlert } from '../../src/components/AppAlert'
 import { ConfirmSheet } from '../../src/components/ConfirmSheet'
 import { BookSiteVisitSheet } from '../../src/components/property/BookSiteVisitSheet'
 import { SectionCard } from '../../src/components/property/SectionCard'
-import { Gallery } from '../../src/components/property/Gallery'
+import { Gallery, SHEET_OVERLAP } from '../../src/components/property/Gallery'
 import { FloatingHeader } from '../../src/components/property/FloatingHeader'
 import { HeroBlock } from '../../src/components/property/HeroBlock'
 import { KeySpecStrip } from '../../src/components/property/KeySpecStrip'
@@ -191,83 +191,94 @@ export default function PropertyDetailScreen() {
         {/* ① Gallery */}
         <Gallery images={listing.images ?? []} />
 
-        {/* ② Badges · title · location · price */}
-        <HeroBlock data={listing} />
-
-        {/* ③ Key specifications */}
-        <SectionCard title="Key specifications">
-          <KeySpecStrip data={listing} />
-        </SectionCard>
-
-        {/* ④ About */}
-        {listing.description ? (
-          <SectionCard title="About this property">
-            <ReadMore text={listing.description} />
+        {/* Everything below the gallery is ONE white sheet with rounded top
+            corners, riding up over the photo — not a stack of floating cards. */}
+        <View style={styles.sheet}>
+          {/* ② Badges · title · location · price — title-less card, so HeroBlock
+              itself carries no padding (SectionCard already supplies 16dp). */}
+          <SectionCard flush>
+            <HeroBlock data={listing} />
           </SectionCard>
-        ) : null}
 
-        {/* ⑤ Amenities — parking is hidden here because the spec strip shows it */}
-        {listing.amenities.length ? (
-          <SectionCard title="Amenities">
-            <AmenityGrid amenities={listing.amenities} hideParking />
+          {/* ③ Key specifications */}
+          <SectionCard flush title="Key Specifications">
+            <KeySpecStrip data={listing} />
           </SectionCard>
-        ) : null}
 
-        {/* ⑥ Location & nearby */}
-        <SectionCard title="Location">
-          <LocationSection data={listing} />
-        </SectionCard>
+          {/* ④ About */}
+          {listing.description ? (
+            <SectionCard flush title="About This Property">
+              <ReadMore text={listing.description} />
+            </SectionCard>
+          ) : null}
 
-        {/* ⑦ Owner / agent */}
-        <SectionCard title="Listed by">
-          <OwnerCard
-            owner={listing.owner}
-            onViewProfile={() => router.push(`/users/${listing.owner.id}`)}
-          />
-        </SectionCard>
+          {/* ⑤ Amenities — parking is hidden here because the spec strip shows it */}
+          {listing.amenities.length ? (
+            <SectionCard flush title="Amenities">
+              <AmenityGrid amenities={listing.amenities} hideParking />
+            </SectionCard>
+          ) : null}
 
-        {/* ⑧ Property details */}
-        <SectionCard title="Property details">
-          <PropertyDetailsGrid data={listing} />
-        </SectionCard>
-
-        {/* ⑨ Documents & approvals — type and label only, never a link */}
-        {documents.length ? (
-          <SectionCard title="Documents & approvals">
-            <DocumentsSection documents={documents} isVerified={listing.isVerified} />
+          {/* ⑥ Location & nearby */}
+          <SectionCard flush title="Location & Nearby Places">
+            <LocationSection data={listing} />
           </SectionCard>
-        ) : null}
 
-        {/* ⑩ Safety & reporting */}
-        <SectionCard title="Safety & reporting">
-          <SafetySection onReport={() => setReportOpen(true)} />
-        </SectionCard>
-
-        {/* ⑪ Similar properties */}
-        {similar.length ? (
-          <SectionCard
-            title="Similar properties"
-            action={
-              <Pressable
-                hitSlop={6}
-                // Same pattern as the home quick-action chips. The Search screen
-                // takes its city from the location store, so only the type is passed —
-                // PropertyDetail carries localitySlug, not the localityId the filter wants.
-                onPress={() => router.push({
-                  pathname: '/search',
-                  params: { propertyType: listing.propertyType },
-                })}
-              >
-                <Text style={styles.link}>View All</Text>
-              </Pressable>
-            }
-          >
-            <SimilarRail
-              items={similar}
-              onPressItem={(nextId) => router.push(`/properties/${nextId}`)}
+          {/* ⑦ Owner / agent */}
+          <SectionCard flush title="Listed By">
+            <OwnerCard
+              owner={listing.owner}
+              onViewProfile={() => router.push(`/users/${listing.owner.id}`)}
             />
           </SectionCard>
-        ) : null}
+
+          {/* ⑧ Property details */}
+          <SectionCard flush title="Property Details">
+            <PropertyDetailsGrid data={listing} />
+          </SectionCard>
+
+          {/* ⑨ Documents & approvals — type and label only, never a link */}
+          {documents.length ? (
+            <SectionCard flush title="Documents & Approvals">
+              <DocumentsSection documents={documents} isVerified={listing.isVerified} />
+            </SectionCard>
+          ) : null}
+
+          {/* ⑩ Safety & reporting */}
+          <SectionCard flush title="Safety & Reporting">
+            <SafetySection onReport={() => setReportOpen(true)} />
+          </SectionCard>
+
+          {/* ⑪ Similar properties */}
+          {similar.length ? (
+            <SectionCard
+              flush
+              title="Similar Properties"
+              action={
+                <Pressable
+                  hitSlop={6}
+                  // Same pattern as the home quick-action chips. The Search screen
+                  // takes its city from the location store, so only the type is passed —
+                  // PropertyDetail carries localitySlug, not the localityId the filter wants.
+                  onPress={() => router.push({
+                    pathname: '/search',
+                    params: { propertyType: listing.propertyType },
+                  })}
+                >
+                  <View style={styles.linkRow}>
+                    <Text style={styles.link}>View All</Text>
+                    <Ionicons name="arrow-forward" size={13} color={colors.brand} />
+                  </View>
+                </Pressable>
+              }
+            >
+              <SimilarRail
+                items={similar}
+                onPressItem={(nextId) => router.push(`/properties/${nextId}`)}
+              />
+            </SectionCard>
+          ) : null}
+        </View>
       </ScrollView>
 
       <FloatingHeader
@@ -316,7 +327,18 @@ export default function PropertyDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.bg },
+  // White, not ivory: the sections form one continuous sheet, so there is no
+  // page background peeking between them.
+  safe:   { flex: 1, backgroundColor: colors.white },
+  // The sheet. overflow:'hidden' is what actually makes the radius bite — without
+  // it the first section's background paints square over the rounded corners.
+  sheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    marginTop: -SHEET_OVERLAP,
+    overflow: 'hidden',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
   errorText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
   backBtn: {
@@ -324,5 +346,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm, backgroundColor: colors.brand,
   },
   backBtnText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.white },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   link: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: colors.brand },
 })

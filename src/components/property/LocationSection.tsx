@@ -11,7 +11,8 @@ import type { NearbyPlace, PropertyDetail } from '../../types'
 const FALLBACK = { latitude: 11.0168, longitude: 76.9558 }
 
 /**
- * ⑥ Map thumbnail, address, curated nearby places.
+ * ⑥ Location & Nearby Places — map thumbnail on the left, address on the right,
+ * curated nearby places underneath.
  *
  * `nearby` comes from the server (B3) rather than a client table, so web and mobile
  * cannot drift and a listing outside a curated city gets an empty list instead of
@@ -23,6 +24,9 @@ export function LocationSection({ data }: { data: PropertyDetail }) {
   const hasExactPin = data.latitude != null && data.longitude != null
   const nearby: NearbyPlace[] = data.nearby ?? []
 
+  // "State PIN" — both halves are optional, so the line is built, not templated.
+  const regionLine = [data.cityState, data.pincode].filter(Boolean).join(' ')
+
   const openInMaps = () => {
     const url = Platform.select({
       ios:     `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(data.title)}`,
@@ -33,69 +37,97 @@ export function LocationSection({ data }: { data: PropertyDetail }) {
   }
 
   return (
-    <View>
-      <Pressable onPress={openInMaps} style={styles.mapWrap}>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={StyleSheet.absoluteFill}
-          initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
-          scrollEnabled={false}
-          zoomEnabled={false}
-          rotateEnabled={false}
-          pitchEnabled={false}
-        >
-          <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor={colors.accent} />
-        </MapView>
-        {!hasExactPin ? (
-          <View style={styles.notice}>
-            <Text style={styles.noticeText}>Showing the locality — the owner has not set an exact pin</Text>
-          </View>
-        ) : null}
-      </Pressable>
+    <View style={styles.wrap}>
+      <View style={styles.left}>
+        <View style={styles.mapWrap}>
+          {/* pointerEvents="none": on Android the MapView swallows touches even
+              with every gesture disabled, which would leave the button below —
+              and the whole "tap to open maps" affordance — dead. */}
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+            initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            rotateEnabled={false}
+            pitchEnabled={false}
+          >
+            <Marker coordinate={{ latitude: lat, longitude: lng }} pinColor={colors.brand} />
+          </MapView>
+        </View>
 
-      <View style={styles.addrRow}>
-        <Ionicons name="location-outline" size={15} color={colors.brand} />
-        <Text style={styles.addr}>
-          {data.addressLine ? `${data.addressLine}, ` : ''}{data.localityName}, {data.cityName}
-        </Text>
+        <Pressable
+          onPress={openInMaps}
+          accessibilityRole="button"
+          accessibilityLabel="Open this location in your maps app"
+          style={({ pressed }) => [styles.mapBtn, pressed && { opacity: 0.7 }]}
+        >
+          <Text style={styles.mapBtnText}>View on Map</Text>
+          <Ionicons name="arrow-forward" size={12} color={colors.brand} />
+        </Pressable>
       </View>
 
-      {nearby.length ? (
-        <View style={styles.nearby}>
-          <Text style={styles.nearbyHead}>Nearby places</Text>
-          {nearby.map((p, i) => (
-            <View key={`${p.name}-${i}`} style={styles.nearbyRow}>
-              <View style={styles.nearbyIcon}>
-                <Ionicons name={landmarkIcon(p.kind)} size={14} color={colors.brand} />
+      {/* Address AND nearby places share the right column, beside the map —
+          the nearby list is not a separate full-width block below it. */}
+      <View style={styles.right}>
+        {data.addressLine ? <Text style={styles.addr}>{data.addressLine}</Text> : null}
+        <Text style={styles.addr}>{data.localityName}, {data.cityName}</Text>
+        {regionLine ? <Text style={styles.addr}>{regionLine}</Text> : null}
+        {/* Out of the map and into the text column: as a 10px overlay on a
+            120dp thumbnail this was unreadable. */}
+        {!hasExactPin ? (
+          <Text style={styles.notice}>
+            Showing the locality — the owner has not set an exact pin
+          </Text>
+        ) : null}
+
+        {nearby.length ? (
+          <View style={styles.nearby}>
+            {nearby.map((p, i) => (
+              <View key={`${p.name}-${i}`} style={styles.nearbyRow}>
+                <Ionicons name={landmarkIcon(p.kind)} size={12} color={colors.brand} />
+                {/* Wraps rather than truncates — "Coimbatore Intl. Airport" clipped to
+                    "Coimbatore Intl. Ai…" is worse than an uneven row. */}
+                <Text style={styles.nearbyName} numberOfLines={2}>{p.name}</Text>
+                <Text style={styles.nearbyDist}>{p.distanceLabel}</Text>
               </View>
-              <Text style={styles.nearbyName} numberOfLines={1}>{p.name}</Text>
-              <Text style={styles.nearbyDist}>{p.distanceLabel}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+            ))}
+          </View>
+        ) : null}
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  mapWrap: { height: 160, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.border },
-  notice: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(15,51,47,0.72)', paddingVertical: 6, paddingHorizontal: spacing.md,
-  },
-  noticeText: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 14, color: colors.white },
+  // 'stretch' (the default) is load-bearing: it lets the map column match the
+  // height of the nearby list beside it instead of leaving dead space below the
+  // button when a listing has many landmarks.
+  wrap:  { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  // 42%, not the mockup's ~45%: our real landmark names are far longer than its
+  // samples, and the text column needs the width more than the map does.
+  left:  { width: '42%' },
+  right: { flex: 1, minWidth: 0 },
 
-  addrRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: spacing.md },
-  addr: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, color: colors.muted, flex: 1 },
-
-  nearby: { marginTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: spacing.md },
-  nearbyHead: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: colors.ink, marginBottom: spacing.sm },
-  nearbyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 7 },
-  nearbyIcon: {
-    width: 28, height: 28, borderRadius: radius.pill,
-    backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center',
+  // flex:1 — the map grows to fill whatever height the row ends up being, so it
+  // tracks the nearby count. minHeight keeps it usable when there are none.
+  mapWrap: { flex: 1, minHeight: 120, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.border },
+  mapBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    marginTop: spacing.sm, paddingVertical: 8,
+    borderWidth: 1, borderColor: colors.brand, borderRadius: radius.sm,
   },
-  nearbyName: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.ink, flex: 1 },
-  nearbyDist: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: colors.brand },
+  mapBtnText: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 15, color: colors.brand },
+
+  addr:   { fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.muted },
+  notice: { fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, color: colors.mutedLight, marginTop: 6 },
+
+  // No rule and no full-width break — this list lives inside the right column,
+  // so it only needs a little air under the address.
+  nearby: { marginTop: spacing.sm },
+  nearbyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
+  // ~168dp of column: the name takes what is left after the icon and distance.
+  nearbyName: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.ink, flex: 1, minWidth: 0 },
+  nearbyDist: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 15, color: colors.muted, flexShrink: 0 },
 })

@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   // under the title's first letter (not under the arrow).
   header:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
   backBtn:     { marginTop: 3 },
-  headerTitle: { fontFamily: fonts.display, fontSize: 24, lineHeight: 31, color: colors.ink },
+  headerTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 31, color: colors.ink },
   cityRow:     { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
   cityText:    { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   bellBtn:     { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
