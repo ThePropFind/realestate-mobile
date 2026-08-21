@@ -22,8 +22,9 @@ import type {
  * fixed 380pt — neither survives eleven sections.
  *
  * It carries no shared state. Filters arrive as route params and leave as route
- * params to /search, which already rebuilds SearchFilters from them. That keeps
- * the deep-link contract (home's category tiles push the same params) intact.
+ * params to whichever screen opened it — /search by default, or the Map tab when
+ * it passes `origin=map`. Both rebuild SearchFilters from those params already,
+ * so the deep-link contract (home's category tiles push the same params) holds.
  */
 
 // A tile can stand for more than one backend enum value — "Villa / House" and
@@ -211,6 +212,15 @@ export default function FiltersScreen() {
     setMaxAge(null); setAmenityIds([]); setApprovals([])
   }, [])
 
+  // Where Apply lands. The Map tab opens this screen with `origin=map` so
+  // applying returns to the map rather than dumping the user into the results
+  // list; every other entry point (Home tiles, Search) omits it and keeps the
+  // /search default, so the "tapping Filters on Home must not jump to the
+  // all-properties list" constraint from the reverted Zustand attempt holds.
+  const applyTarget = (Array.isArray(params.origin) ? params.origin[0] : params.origin) === 'map'
+    ? '/(tabs)/map'
+    : '/search'
+
   const apply = () => {
     // Stringify for the router; arrays stay arrays so they serialize as
     // repeated keys, which is what Spring binds to List<T>.
@@ -219,7 +229,7 @@ export default function FiltersScreen() {
       if (k === 'citySlug' || v === undefined) continue
       routeParams[k] = Array.isArray(v) ? v.map(String) : String(v)
     }
-    router.dismissTo({ pathname: '/search', params: routeParams })
+    router.dismissTo({ pathname: applyTarget, params: routeParams })
   }
 
   return (
