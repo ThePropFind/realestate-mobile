@@ -93,10 +93,9 @@ const styles = StyleSheet.create({
   // transform — react-native-maps rasterises only the layout box, so a scaled
   // transform clips whatever overflows it. Bigger layout keeps the pill whole.
   wrap: { alignItems: 'center' },
-  // A rounded rectangle, not a pill: 999 read as a lozenge against the map,
-  // where the design uses a squarer 10pt corner.
+  // A rounded rectangle, not a pill: 999 read as a lozenge against the map.
   pill: {
-    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 15,
     borderWidth: 1.5, borderColor: '#fff', alignItems: 'center',
     shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 4,
   },

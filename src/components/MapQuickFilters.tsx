@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet } from 'react-native'
 import { Text } from './Text'
 import { Ionicons } from '@expo/vector-icons'
 import { formatPricePill } from '../lib/format'
@@ -25,18 +25,22 @@ interface Props {
  * current selection as their label so the strip reports state instead of just
  * offering actions.
  *
- * All four sit in one white tray and all four are always visible. It was a
- * horizontal ScrollView first, which put the fourth button half off the screen
- * and read as clipped rather than scrollable. Buttons are content-sized with
- * `flexShrink`, so a long active label (a budget band, say) ellipsizes inside
- * its own button instead of pushing a sibling off the row.
+ * The row scrolls horizontally and the buttons float directly on the map. A
+ * white tray holding all four on one screen was tried and dropped: at 393pt it
+ * forced every label down to an ellipsis ("R…", "Property …"). Labels are never
+ * allowed to shrink here — the row is free to run past the screen edge instead.
  */
 export function MapQuickFilters({ filters, onListingType, onOpenFilters }: Props) {
   const priceLabel = budgetLabel(filters)
   const typeCount = filters.propertyTypes?.length ?? (filters.propertyType ? 1 : 0)
 
   return (
-    <View style={styles.tray}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}
+      keyboardShouldPersistTaps="handled"
+    >
       <Pill
         icon="home-outline"
         label="Buy"
@@ -63,7 +67,7 @@ export function MapQuickFilters({ filters, onListingType, onOpenFilters }: Props
         chevron
         onPress={onOpenFilters}
       />
-    </View>
+    </ScrollView>
   )
 }
 
@@ -81,10 +85,10 @@ function Pill({ icon, label, on, chevron, onPress }: {
       accessibilityState={{ selected: on }}
       style={({ pressed }) => [styles.pill, on && styles.pillOn, pressed && { opacity: 0.85 }]}
     >
-      <Ionicons name={icon} size={14} color={on ? '#fff' : colors.ink} />
+      <Ionicons name={icon} size={15} color={on ? '#fff' : colors.ink} />
       <Text style={[styles.pillText, on && styles.pillTextOn]} numberOfLines={1}>{label}</Text>
       {chevron ? (
-        <Ionicons name="chevron-down" size={12} color={on ? '#fff' : colors.muted} />
+        <Ionicons name="chevron-down" size={13} color={on ? '#fff' : colors.muted} />
       ) : null}
     </Pressable>
   )
@@ -105,22 +109,17 @@ function budgetLabel(f: SearchFilters): string | null {
 }
 
 const styles = StyleSheet.create({
-  // The white div from the design. Its left edge lines up with the carousel's
-  // first card (both inset 24) so the two bottom rows read as one stack.
-  tray: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6,
-    marginHorizontal: 24, paddingHorizontal: 8, paddingVertical: 8,
-    backgroundColor: colors.white, borderRadius: 14,
+  // Inset 24 to line the first button up with the carousel's first card.
+  row: { paddingHorizontal: 24, gap: 8, paddingVertical: 2 },
+  // Squared rectangle, not a pill — 8pt, matching the design's buttons. No
+  // flexShrink: labels stay whole and the row scrolls instead.
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    height: 40, paddingHorizontal: 14, borderRadius: 8,
+    backgroundColor: colors.white,
     ...shadow.raised,
   },
-  // 8, not radius.pill: the design's buttons are squared rectangles, and a
-  // pill inside a rounded tray read as two competing curves.
-  pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1,
-    height: 38, paddingHorizontal: 8, borderRadius: 8,
-    backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border,
-  },
-  pillOn:     { backgroundColor: BRAND, borderColor: BRAND },
-  pillText:   { fontFamily: fonts.semibold, fontSize: 11.5, lineHeight: 15, color: colors.ink, flexShrink: 1 },
+  pillOn:     { backgroundColor: BRAND },
+  pillText:   { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 17, color: colors.ink },
   pillTextOn: { fontFamily: fonts.bold, color: '#fff' },
 })
