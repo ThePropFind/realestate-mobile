@@ -14,11 +14,15 @@ export const MINI_CARD_WIDTH = 190
  * computed half-screen value so two fit per row on a narrow phone.
  */
 export function PropertyMiniCard({
-  item, onPress, width = MINI_CARD_WIDTH,
+  item, onPress, width = MINI_CARD_WIDTH, saved = false, onToggleSave,
 }: {
   item: PropertyCard
   onPress: () => void
   width?: number
+  /** Heart state — only read when `onToggleSave` is supplied. */
+  saved?: boolean
+  /** Omit to render the card without a heart (the similar rail and owner grid do). */
+  onToggleSave?: (id: string) => void
 }) {
   const specs = [
     item.bedrooms != null ? `${item.bedrooms} BHK` : null,
@@ -34,6 +38,19 @@ export function PropertyMiniCard({
           <Ionicons name="image-outline" size={22} color={colors.mutedLight} />
         </View>
       )}
+      {onToggleSave ? (
+        <Pressable
+          onPress={() => onToggleSave(item.id)}
+          hitSlop={8}
+          style={({ pressed }) => [styles.heart, pressed && { opacity: 0.8 }]}
+        >
+          <Ionicons
+            name={saved ? 'heart' : 'heart-outline'}
+            size={15}
+            color={saved ? colors.accent : colors.brand}
+          />
+        </Pressable>
+      ) : null}
       <View style={styles.body}>
         <Text style={styles.price}>{formatPrice(item.price, item.priceUnit)}</Text>
         <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
@@ -54,6 +71,13 @@ const styles = StyleSheet.create({
   },
   image:   { width: '100%', height: 110, backgroundColor: colors.border },
   noImage: { alignItems: 'center', justifyContent: 'center' },
+  heart:   {
+    position: 'absolute', top: 8, right: 8,
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.white,
+    ...shadow.card,
+  },
   body:    { padding: spacing.md, gap: 2 },
   price:   { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.brand },
   title:   { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 17, color: colors.ink },

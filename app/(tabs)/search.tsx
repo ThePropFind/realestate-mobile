@@ -5,7 +5,7 @@ import { ListSkeleton } from '../../src/components/Skeleton'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { FilterSheet, activeFilterCount, type SearchFilters } from '../../src/components/FilterSheet'
+import { activeFilterCount, filtersFromParams, filtersToParams, type SearchFilters } from '../../src/lib/searchFilters'
 import { CityPickerSheet } from '../../src/components/CityPickerSheet'
 import { NotificationsSheet } from '../../src/components/NotificationsSheet'
 import { appAlert } from '../../src/components/AppAlert'
@@ -48,32 +48,33 @@ export default function SearchScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn)
-  const params = useLocalSearchParams<{
-    listingType?: string; q?: string; propertyType?: string; propertyTypes?: string | string[]
-    minPrice?: string; maxPrice?: string; minBedrooms?: string
-  }>()
+  // Loosely typed on purpose — filtersFromParams owns the parsing, and the
+  // filter screen can add a param without this signature going stale.
+  // `q` stays typed (it feeds the keyword box); the rest is deliberately loose
+  // so filtersFromParams owns the parsing and the filter screen can add a param
+  // without this signature going stale.
+  const params = useLocalSearchParams<{ q?: string }>() as
+    { q?: string } & Record<string, string | string[] | undefined>
 
   const city = useLocationStore((s) => s.city)
   const [keyword, setKeyword] = useState(params.q ?? '')
   // Submitted keyword — sent to the server so matches beyond the fetched page are found
   // (the old client-only filter silently missed anything past the first 30 results).
   const [query, setQuery] = useState(params.q ?? '')
-  // Seeded from route params so the home-screen tiles/filter land here with their
-  // selection applied. Tabs and the filter sheet both write into this one object.
-  const [filters, setFilters] = useState<SearchFilters>({
-    listingType:   params.listingType as SearchFilters['listingType'],
-    propertyType:  params.propertyType as SearchFilters['propertyType'],
-    // Home's "Commercial" tile sends two types at once.
-    propertyTypes: params.propertyTypes
-      ? ([] as string[]).concat(params.propertyTypes) as SearchFilters['propertyTypes']
-      : undefined,
-    minPrice:     num(params.minPrice),
-    maxPrice:     num(params.maxPrice),
-    minBedrooms:  num(params.minBedrooms),
-  })
+  // Seeded from the route params — the filter screen and the home tiles both
+  // arrive here that way, so one parser covers every entry point.
+  const [filters, setFilters] = useState<SearchFilters>(() => filtersFromParams(params))
+  // /search is a mounted tab, so the initializer above does NOT re-run when the
+  // filter modal navigates back with a new selection. Re-sync on param change.
+  // Keyed off a serialized copy because useLocalSearchParams returns a fresh
+  // object identity every render.
+  const paramsKey = JSON.stringify(params)
+  useEffect(() => {
+    setFilters(filtersFromParams(JSON.parse(paramsKey) as Record<string, string | string[] | undefined>))
+  }, [paramsKey])
+
   const category = categoryOf(filters)
 
-  const [filterOpen, setFilterOpen] = useState(false)
   const [cityPickerOpen, setCityPickerOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const filterCount = activeFilterCount(filters)
@@ -224,7 +225,7 @@ export default function SearchScreen() {
                   <Ionicons name="close-circle" size={18} color={colors.mutedLight} />
                 </Pressable>
               ) : null}
-              <Pressable onPress={() => setFilterOpen(true)} style={({ pressed }) => [styles.filterBtn, pressed && { opacity: 0.85 }]}>
+              <Pressable onPress={() => router.push({ pathname: '/filters', params: filtersToParams(filters) })} style={({ pressed }) => [styles.filterBtn, pressed && { opacity: 0.85 }]}>
                 <Ionicons name="options-outline" size={18} color="#fff" />
                 <Text style={styles.filterBtnText}>Filters</Text>
                 {filterCount > 0 ? (
@@ -273,7 +274,6 @@ export default function SearchScreen() {
         )}
       />
 
-      <FilterSheet visible={filterOpen} onClose={() => setFilterOpen(false)} value={filters} onApply={setFilters} />
       <CityPickerSheet visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} />
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />
     </SafeAreaView>

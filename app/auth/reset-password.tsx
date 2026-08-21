@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 import { Text } from '../../src/components/Text'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useHeaderOffset } from '../../src/lib/useHeaderOffset'
 import { Ionicons } from '@expo/vector-icons'
 import { z } from 'zod'
 import { authApi } from '../../src/lib/api'
@@ -32,6 +32,7 @@ const schema = z.object({
 type Errors = Partial<Record<'email' | 'otp' | 'newPassword' | 'confirm', string>>
 
 export default function ResetPasswordScreen() {
+  const headerOffset = useHeaderOffset()
   const router = useRouter()
   const params = useLocalSearchParams<{ email?: string }>()
   const setSession = useAuthStore((s) => s.setSession)
@@ -102,9 +103,9 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Set new password' }} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={headerOffset} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.iconCircle}><Ionicons name="shield-checkmark-outline" size={28} color={colors.brand} /></View>
           <Text style={styles.heading}>Set a new password</Text>

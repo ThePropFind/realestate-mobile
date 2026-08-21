@@ -7,20 +7,32 @@ export type ChipOption<T extends string = string> = { label: string; value: T }
 interface Props<T extends string = string> {
   label?: string
   options: ChipOption<T>[]
-  value: T | null
-  onChange: (v: T) => void
+  /** Single-select. Ignored when `values` is supplied. */
+  value?: T | null
+  onChange?: (v: T) => void
+  /**
+   * Multi-select mode: pass the selected list plus `onToggle`. Opt-in so the
+   * existing single-select callers are untouched.
+   */
+  values?: T[]
+  onToggle?: (v: T) => void
   wrap?: boolean
 }
 
-export function ChipRow<T extends string = string>({ label, options, value, onChange, wrap = true }: Props<T>) {
+export function ChipRow<T extends string = string>({
+  label, options, value = null, onChange, values, onToggle, wrap = true,
+}: Props<T>) {
+  const multi = values !== undefined
+
   const content = (
     <View style={wrap ? styles.wrapList : styles.row}>
       {options.map((opt) => {
-        const selected = value === opt.value
+        const selected = multi ? values.includes(opt.value) : value === opt.value
+        const press = multi ? onToggle : onChange
         return (
           <Pressable
             key={opt.value}
-            onPress={() => onChange(opt.value)}
+            onPress={() => press?.(opt.value)}
             style={[styles.chip, selected && styles.chipOn]}
           >
             <Text style={[styles.chipText, selected && styles.chipTextOn]}>{opt.label}</Text>

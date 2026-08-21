@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
 import { Text } from '../../src/components/Text'
 import { Link, Stack, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useHeaderOffset } from '../../src/lib/useHeaderOffset'
 import { Ionicons } from '@expo/vector-icons'
 import { z } from 'zod'
 import { authApi } from '../../src/lib/api'
@@ -22,6 +22,7 @@ const schema = z.object({
 })
 
 export default function ForgotPasswordScreen() {
+  const headerOffset = useHeaderOffset()
   const router = useRouter()
 
   const [email, setEmail] = useState('')
@@ -48,9 +49,9 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Reset password' }} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={headerOffset} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.iconCircle}><Ionicons name="lock-closed-outline" size={28} color={colors.brand} /></View>
           <Text style={styles.heading}>Reset your password</Text>

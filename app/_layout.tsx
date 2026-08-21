@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Text } from '../src/components/Text'
 import { Stack, SplashScreen } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -15,6 +15,7 @@ import {
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { useAuthStore } from '../src/store/authStore'
+import { useReduceMotion } from '../src/lib/useReduceMotion'
 import { AppAlertHost } from '../src/components/AppAlert'
 import { colors, fonts } from '../src/theme'
 
@@ -44,8 +45,23 @@ if (sentryDsn) {
   })
 }
 
+/**
+ * Opaque band behind the OS status bar.
+ *
+ * Expo SDK 54+ forces edge-to-edge on Android, so the status bar is always
+ * translucent and `StatusBar backgroundColor` is ignored — scrolled content
+ * runs under the clock and battery icons and collides with them. Painting our
+ * own band on top of everything keeps the app visually separate from the
+ * system bar on every screen, present and future.
+ */
+function StatusBarBackdrop() {
+  const insets = useSafeAreaInsets()
+  return <View style={[styles.statusBarBackdrop, { height: insets.top }]} pointerEvents="none" />
+}
+
 function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate)
+  const reduceMotion = useReduceMotion()
 
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
@@ -65,7 +81,8 @@ function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
+      {/* Light glyphs — the backdrop below is always dark. */}
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.brand },
@@ -77,9 +94,34 @@ function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="post"   options={{ headerShown: false }} />
+        {/* Filters paints its own brand header, so the stack header is off.
+            Motion, deliberately not left to `presentation` alone: react-native-screens
+            documents that "modal" on Android is EQUIVALENT TO PUSH, so the default
+            slid this screen in horizontally like a pushed page — while its header
+            offers a ✕ (dismiss), not a ← (back). Enter and exit must share a path,
+            and that path has to match the affordance, so it slides from the bottom
+            and is dismissed downward by gesture or by ✕.
+            Under Reduce Motion the vertical travel becomes a cross-fade: the same
+            state change, without the vestibular movement. */}
+        <Stack.Screen
+          name="filters"
+          options={{
+            // NO `presentation` here, deliberately. A modal presentation wraps the
+            // screen in a native modal container on Android whose dismissal is not
+            // driven by `animation`, so the exit snapped shut while the entrance
+            // animated. As a plain stack screen the same `slide_from_bottom` plays
+            // forwards on push and reverses on pop — which is the symmetry we want.
+            headerShown: false,
+            animation: reduceMotion ? 'fade' : 'slide_from_bottom',
+            gestureEnabled: true,
+            gestureDirection: 'vertical',
+          }}
+        />
         <Stack.Screen name="my-listings" options={{ headerShown: false }} />
         <Stack.Screen name="emi-calculator" options={{ headerShown: false }} />
       </Stack>
+      {/* Last sibling so it paints above everything the Stack renders. */}
+      <StatusBarBackdrop />
       <AppAlertHost />
     </SafeAreaProvider>
   )
@@ -87,6 +129,18 @@ function RootLayout() {
 
 const styles = StyleSheet.create({
   headerTitle: { fontFamily: fonts.bold, fontSize: 18, color: '#fff' },
+  statusBarBackdrop: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    // zIndex only — NO elevation. Elevation on Android casts a Material shadow,
+    // and at a high value it spills a dark gradient onto whatever sits below,
+    // which reads as a seam between this band and the header under it.
+    zIndex: 100,
+    // colors.brand, not brandDark: every self-padding header (saved, profile,
+    // bookings) paints its own status-bar area in colors.brand, and the home
+    // hero's top scrim now starts opaque on the same value — so the band meets
+    // whatever is under it with no seam.
+    backgroundColor: colors.brand,
+  },
 })
 
 // Sentry.wrap adds the error boundary + native crash/touch instrumentation.

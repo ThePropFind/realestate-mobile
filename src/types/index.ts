@@ -2,7 +2,7 @@
 // Ported verbatim from realestate-frontend/src/types/index.ts. Keep in sync.
 
 export type ListingType     = 'SALE' | 'RENT' | 'PG'
-export type PropertyType    = 'APARTMENT' | 'INDEPENDENT_HOUSE' | 'VILLA' | 'PLOT' | 'COMMERCIAL_OFFICE' | 'COMMERCIAL_SHOP' | 'BUILDER_FLOOR' | 'PG_HOSTEL' | 'AGRICULTURAL_LAND'
+export type PropertyType    = 'APARTMENT' | 'INDEPENDENT_HOUSE' | 'VILLA' | 'PLOT' | 'COMMERCIAL_OFFICE' | 'COMMERCIAL_SHOP' | 'BUILDER_FLOOR' | 'PG_HOSTEL' | 'AGRICULTURAL_LAND' | 'WAREHOUSE'
 export type ListedBy        = 'OWNER' | 'PROMOTER' | 'AGENT'
 export type ApprovalAuthority = 'DTCP' | 'CMDA' | 'TNHB' | 'CMA' | 'RERA' | 'LOCAL' | 'OTHER' | 'NONE'
 export type OwnershipType   = 'SINGLE' | 'JOINT' | 'GIFT' | 'INHERITED' | 'COMPANY' | 'TRUST'
@@ -14,6 +14,7 @@ export type PreferredTenant = 'FAMILY' | 'BACHELOR_MEN' | 'BACHELOR_WOMEN' | 'AN
 export type ListingStatus   = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'EXPIRED' | 'REJECTED' | 'SOLD_RENTED'
 export type PriceUnit       = 'TOTAL' | 'PER_MONTH' | 'PER_SQFT'
 export type PossessionStatus = 'READY_TO_MOVE' | 'UNDER_CONSTRUCTION' | 'NEW_LAUNCH'
+export type Facing          = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' | 'NORTH_EAST' | 'NORTH_WEST' | 'SOUTH_EAST' | 'SOUTH_WEST'
 export type LandmarkKind    = 'HOSPITAL' | 'SCHOOL' | 'MALL' | 'TRANSPORT' | 'FOOD' | 'PARK' | 'TECH'
 export type ReportReason    = 'FRAUD_OR_SCAM' | 'ALREADY_SOLD_OR_RENTED' | 'INCORRECT_INFO'
                             | 'DUPLICATE_LISTING' | 'OFFENSIVE_CONTENT' | 'OTHER'
@@ -39,6 +40,8 @@ export interface PropertyCard {
   areaSqft: number; furnishing: FurnishingStatus; localityName: string; cityName: string
   latitude: number | null; longitude: number | null
   isFeatured: boolean; isVerified: boolean; primaryImageUrl: string | null
+  imageCount: number
+  priceNegotiable: boolean; parkingCount: number | null
   viewsCount: number; createdAt: string
 }
 
@@ -135,6 +138,17 @@ export interface SearchParams {
   minPrice?: number; maxPrice?: number; minBedrooms?: number; maxBedrooms?: number
   minArea?: number; maxArea?: number; furnishing?: FurnishingStatus
   featuredOnly?: boolean; keyword?: string; page?: number; size?: number; sort?: string
+  // ── Advanced filters (filter screen) — OR within a group, AND across groups.
+  possessionStatuses?: PossessionStatus[]; listedBys?: ListedBy[]
+  facings?: Facing[]; approvalAuthorities?: ApprovalAuthority[]
+  /** "Has ALL of these", not any-of. */
+  amenityIds?: string[]
+  /** Multi-select localities. */
+  localityIds?: string[]
+  minBathrooms?: number; maxFloor?: number; maxAge?: number
+  parkingRequired?: boolean; verifiedOnly?: boolean; negotiableOnly?: boolean
+  // ── Map viewport — all four required together, or the box is ignored.
+  neLat?: number; neLng?: number; swLat?: number; swLng?: number
 }
 
 export interface City     { id: string; name: string; state: string; slug: string; active: boolean }
@@ -211,6 +225,8 @@ export interface PropertyCreateRequest {
   latitude?: number | null
   longitude?: number | null
   amenityIds?: string[]
+  /** Multi-select localities. */
+  localityIds?: string[]
   // Phase B extensions
   listedBy?: ListedBy
   plotLengthFt?: number | null

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { colors, heroGradient } from '../theme'
 
 const { width: SCREEN_W } = Dimensions.get('window')
-export const HERO_PHOTO_H = 252 // 30% shorter than the original 360
+export const HERO_PHOTO_H = 278 // room for the headline, trust line and CTA
 const AUTO_MS = 4000
 
 type Props = { images: string[] }
@@ -14,6 +14,9 @@ type Props = { images: string[] }
  * "Unlock your Wealth" card is rendered by the screen *over* the bottom of this
  * photo (and overflowing below it), so it lives outside this component.
  * Auto-advances every 4s, pauses while touched, falls back to the brand gradient.
+ *
+ * Renders NO scrim of its own — the home screen paints one continuous gradient
+ * over the whole hero, and a second layer here would double-darken it.
  */
 export function HeroCarousel({ images }: Props) {
   const scroller = useRef<ScrollView>(null)
@@ -54,18 +57,13 @@ export function HeroCarousel({ images }: Props) {
         <LinearGradient colors={heroGradient} style={styles.photo} />
       )}
 
-      {/* Bottom scrim so the overlapping card edge blends into the photo */}
-      <LinearGradient
-        colors={['transparent', 'rgba(15,23,42,0.45)']}
-        style={styles.scrim}
-        pointerEvents="none"
-      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  wrap:   { height: HERO_PHOTO_H, backgroundColor: colors.brandDark, overflow: 'hidden' },
+  // brand (not brandDark) so the split second before a photo decodes still
+  // matches the status-bar band above it.
+  wrap:   { height: HERO_PHOTO_H, backgroundColor: colors.brand, overflow: 'hidden' },
   photo:  { width: SCREEN_W, height: HERO_PHOTO_H },
-  scrim:  { position: 'absolute', left: 0, right: 0, bottom: 0, height: 130 },
 })

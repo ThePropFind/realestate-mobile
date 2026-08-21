@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Modal,
   Pressable, ScrollView, StyleSheet, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -93,7 +93,7 @@ export function BookSiteVisitSheet({
             <Ionicons name="close" size={24} color={colors.ink} />
           </Pressable>
         </View>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled">
             <Text style={styles.sub} numberOfLines={2}>{title}</Text>
 
