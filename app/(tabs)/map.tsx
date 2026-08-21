@@ -5,7 +5,9 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps'
+import * as Location from 'expo-location'
 import { propertyApi } from '../../src/lib/api'
+import { appAlert } from '../../src/components/AppAlert'
 import { useLocationStore } from '../../src/store/locationStore'
 import { MapPriceMarker } from '../../src/components/MapPriceMarker'
 import { MapPropertyCarousel, SNAP } from '../../src/components/MapPropertyCarousel'
@@ -21,18 +23,19 @@ const BRAND = colors.brand
 
 // The map asks for exactly the controller's page ceiling (Math.min(size, 100)).
 // Anything past it does not exist as far as this screen is concerned, which is
-// why the result count is shown rather than hidden — see `capped`. Viewport
-// scoping used to be the real answer to this, but "Search this area" was cut
-// on 2026-08-21, so Filters is the only way to narrow a city with >100 pins.
+// why the result count below is shown rather than hidden — see `capped`.
 const PAGE_SIZE = 100
 
-// Coimbatore city center — the map's opening viewport.
+// Coimbatore city center — the fallback viewport before any bounds search.
 const COIMBATORE: Region = {
   latitude: 11.0168,
   longitude: 76.9558,
   latitudeDelta: 0.12,
   longitudeDelta: 0.12,
 }
+
+/** The map's viewport, as the four params PropertySearchRequest binds. */
+type Bounds = Pick<SearchParams, 'neLat' | 'neLng' | 'swLat' | 'swLng'>
 
 // Category chips → the property types each one selects. `null` = every type.
 // A chip is a shorthand for a filter value, exactly like the Search tab's
@@ -62,6 +65,30 @@ function categoryOf(f: SearchFilters): number {
   if (!sel.length) return 0
   return CATEGORIES.findIndex((c) =>
     c.types != null && c.types.length === sel.length && c.types.every((t) => sel.includes(t)))
+}
+
+/** Corners of a region, in the order the backend's two `between` predicates want. */
+function boundsOf(r: Region): Bounds {
+  return {
+    neLat: r.latitude + r.latitudeDelta / 2,
+    neLng: r.longitude + r.longitudeDelta / 2,
+    swLat: r.latitude - r.latitudeDelta / 2,
+    swLng: r.longitude - r.longitudeDelta / 2,
+  }
+}
+
+/**
+ * Has the map moved far enough from what the current results were fetched for
+ * to be worth re-querying? A quarter of a screen of pan, or a halving/doubling
+ * of the zoom. Anything less and "Search this area" would flicker on during the
+ * settle animation after a marker tap.
+ */
+function movedEnough(from: Region, to: Region): boolean {
+  const panned =
+    Math.abs(from.latitude - to.latitude) > to.latitudeDelta * 0.25 ||
+    Math.abs(from.longitude - to.longitude) > to.longitudeDelta * 0.25
+  const zoomed = Math.abs(Math.log2(from.latitudeDelta / to.latitudeDelta)) > 0.5
+  return panned || zoomed
 }
 
 export default function MapScreen() {
@@ -98,6 +125,15 @@ export default function MapScreen() {
   // Set to a listing id when the camera still owes it a move; consumed by the
   // pan effect once the map surface is ready.
   const [pendingPan, setPendingPan] = useState<string | null>(null)
+  const [bounds, setBounds] = useState<Bounds | null>(null)
+  const [canSearchArea, setCanSearchArea] = useState(false)
+  const [hasLocationPerm, setHasLocationPerm] = useState(false)
+  const [locating, setLocating] = useState(false)
+  // Height of the bottom stack (carousel + quick filters), measured so the
+  // floating controls can sit just above it instead of guessing. Seeded with a
+  // close-enough estimate purely so the controls do not render behind the tab
+  // bar for the one frame before onLayout reports the real height.
+  const [bottomStackH, setBottomStackH] = useState(300)
   // Bumped on every screen focus. Feeds each marker's `refresh` prop (re-arms
   // its tracksViewChanges so the pill re-rasterises) and, via the selected
   // marker's key, forces that marker to re-add on top when you return.
@@ -106,10 +142,14 @@ export default function MapScreen() {
 
   const mapRef = useRef<MapView>(null)
   const listRef = useRef<FlatList<PropertyCard>>(null)
-  // Latest camera position — read by panTo so a pan keeps the user's zoom.
+  // Latest camera position, and the one the current results were fetched for.
   const regionRef = useRef<Region>(COIMBATORE)
+  const queriedRegionRef = useRef<Region>(COIMBATORE)
   // Read synchronously inside `load`, where the state value would still be stale.
   const selectedIdRef = useRef<string | null>(null)
+  // True while one of OUR animations is in flight, so the settle it produces is
+  // not mistaken for the user panning away from their results.
+  const selfMoveRef = useRef(false)
   // Sequence number of the newest issued search. Chips, the quick strip, the
   // keyword box and "Search this area" can all fire a load in quick succession,
   // and without this a slower earlier response can land last and win.
@@ -128,7 +168,12 @@ export default function MapScreen() {
   const load = useCallback(async () => {
     const seq = ++reqRef.current
     try {
-      const apiParams: SearchParams = { citySlug: city.slug, page: 0, size: PAGE_SIZE, ...filters }
+      const apiParams: SearchParams = { page: 0, size: PAGE_SIZE, ...filters }
+      // Bounds and city are alternatives, never both: once the user has asked
+      // to search a drawn-out viewport, a city filter on top of it would blank
+      // the results the moment they panned past the city line.
+      if (bounds) Object.assign(apiParams, bounds)
+      else apiParams.citySlug = city.slug
       if (query.trim()) apiParams.keyword = query.trim()
 
       const { data } = await propertyApi.search(apiParams)
@@ -148,6 +193,8 @@ export default function MapScreen() {
         setPendingPan(next)
         listRef.current?.scrollToOffset({ offset: 0, animated: false })
       }
+      queriedRegionRef.current = regionRef.current
+      setCanSearchArea(false)
     } catch {
       if (seq !== reqRef.current) return
       setItems([])
@@ -157,7 +204,7 @@ export default function MapScreen() {
     } finally {
       if (seq === reqRef.current) setLoading(false)
     }
-  }, [filters, query, city.slug, select])
+  }, [filters, bounds, query, city.slug, select])
 
   useEffect(() => { setLoading(true); void load() }, [load])
 
@@ -165,6 +212,14 @@ export default function MapScreen() {
   // the old focus-effect reload replaced `items` on every tab switch, which was
   // half of why the camera effect kept firing and yanking the view back.
   useFocusEffect(useCallback(() => { setFocusEpoch((e) => e + 1) }, []))
+
+  // Show the blue dot straight away if location was already granted, without
+  // prompting — the prompt belongs to the My Location button.
+  useEffect(() => {
+    void Location.getForegroundPermissionsAsync()
+      .then(({ status }) => setHasLocationPerm(status === 'granted'))
+      .catch(() => setHasLocationPerm(false))
+  }, [])
 
   // Draw the selected marker LAST — Android's Google Maps ignores marker zIndex
   // for custom views on overlap and paints in child order, so the active pill
@@ -176,16 +231,29 @@ export default function MapScreen() {
     return [...items.filter((p) => p.id !== selectedId), sel]
   }, [items, selectedId])
 
+  /**
+   * Every camera move we make ourselves goes through here, flagged so
+   * `onRegionChangeComplete` can tell it apart from a real pan. The flag also
+   * clears on a timer: if the target happens to equal the current camera the
+   * map emits no settle at all, and a stuck flag would swallow the user's next
+   * pan.
+   */
+  const animateTo = useCallback((region: Region, duration: number) => {
+    selfMoveRef.current = true
+    setTimeout(() => { selfMoveRef.current = false }, duration + 300)
+    mapRef.current?.animateToRegion(region, duration)
+  }, [])
+
   /** Centre on a listing, keeping the user's current zoom rather than forcing one. */
   const panTo = useCallback((lat: number, lng: number) => {
     const r = regionRef.current
-    mapRef.current?.animateToRegion({
+    animateTo({
       latitude: lat,
       longitude: lng,
       latitudeDelta: r.latitudeDelta,
       longitudeDelta: r.longitudeDelta,
     }, 300)
-  }, [])
+  }, [animateTo])
 
   // The camera moves for exactly two reasons: a fresh auto-selection whose pin
   // is off-screen, and a carousel swipe. It used to animate to a fixed 0.05
@@ -206,8 +274,23 @@ export default function MapScreen() {
     if (!inView) panTo(sel.latitude, sel.longitude)
   }, [mapReady, pendingPan, items, panTo])
 
-  // Kept purely so panTo can reuse the current zoom.
-  const onRegionChangeComplete = useCallback((r: Region) => { regionRef.current = r }, [])
+  const onRegionChangeComplete = useCallback((r: Region) => {
+    regionRef.current = r
+    if (selfMoveRef.current) {
+      // Our own pan (carousel swipe, My Location, off-screen auto-select).
+      // Rebase the comparison point instead of offering to re-query a move the
+      // user never made — otherwise every card swipe pops the button open.
+      selfMoveRef.current = false
+      queriedRegionRef.current = r
+      return
+    }
+    setCanSearchArea(movedEnough(queriedRegionRef.current, r))
+  }, [])
+
+  const searchThisArea = useCallback(() => {
+    setBounds(boundsOf(regionRef.current))
+    setCanSearchArea(false)
+  }, [])
 
   // Marker tap → select + scroll the carousel to its card. No camera move: the
   // pin you just tapped is by definition already on screen.
@@ -244,8 +327,37 @@ export default function MapScreen() {
     params: { ...filtersToParams(filters), origin: 'map' },
   })
 
-  const submitKeyword = () => setQuery(keyword)
-  const clearKeyword = () => { setKeyword(''); setQuery('') }
+  const goToMyLocation = async () => {
+    try {
+      setLocating(true)
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        appAlert('Permission needed', 'Allow location access to centre the map on where you are.')
+        return
+      }
+      setHasLocationPerm(true)
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      animateTo({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 500)
+    } catch {
+      appAlert('Could not get location', 'Check that location services are switched on and try again.')
+    } finally {
+      setLocating(false)
+    }
+  }
+
+  const submitKeyword = () => {
+    setQuery(keyword)
+    // A text search is a fresh question about the whole city, not about the
+    // rectangle the user happens to be looking at.
+    setBounds(null)
+  }
+
+  const clearKeyword = () => { setKeyword(''); setQuery(''); setBounds(null) }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -267,7 +379,9 @@ export default function MapScreen() {
           onPress={() => select(null)}
           onMapReady={() => setMapReady(true)}
           onRegionChangeComplete={onRegionChangeComplete}
+          showsUserLocation={hasLocationPerm}
           showsMyLocationButton={false}
+          // The floating controls own the bottom-right corner.
           toolbarEnabled={false}
         >
           {ordered.map((p) => (
@@ -352,10 +466,38 @@ export default function MapScreen() {
             <View style={styles.cappedPill} pointerEvents="none">
               <Ionicons name="information-circle-outline" size={13} color={colors.warning} />
               <Text style={styles.cappedText}>
-                Showing {fetched} of {total} — narrow it with Filters
+                Showing {fetched} of {total} — zoom in and search this area
               </Text>
             </View>
           ) : null}
+        </View>
+
+        {/* ── Floating controls, stacked just above the bottom sheet stack ── */}
+        <View
+          style={[styles.controls, { bottom: bottomStackH + 14 }]}
+          pointerEvents="box-none"
+        >
+          {canSearchArea ? (
+            <Pressable
+              onPress={searchThisArea}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.control, pressed && { opacity: 0.85 }]}
+            >
+              <Ionicons name="search" size={19} color={BRAND} />
+              <Text style={styles.controlText}>Search{'\n'}this area</Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={goToMyLocation}
+            accessibilityRole="button"
+            accessibilityLabel="Centre the map on my location"
+            style={({ pressed }) => [styles.control, pressed && { opacity: 0.85 }]}
+          >
+            {locating
+              ? <ActivityIndicator size="small" color={BRAND} />
+              : <Ionicons name="locate" size={19} color={BRAND} />}
+            <Text style={styles.controlText}>My{'\n'}Location</Text>
+          </Pressable>
         </View>
 
         {loading ? (
@@ -369,7 +511,7 @@ export default function MapScreen() {
             <View style={styles.emptyCard}>
               <Ionicons name="map-outline" size={28} color={colors.mutedLight} />
               <Text style={styles.emptyText}>
-                {query.trim() || filterCount > 0
+                {bounds || query.trim() || filterCount > 0
                   ? 'No mapped listings match this search'
                   : `No mapped listings in ${city.name} yet`}
               </Text>
@@ -381,7 +523,11 @@ export default function MapScreen() {
             Positioned off insets.bottom, not a bare 84: the tab bar is
             66 + insets.bottom and the Post FAB sits above it, so on
             gesture-nav Android a fixed offset hides behind both. */}
-        <View style={[styles.bottomStack, { bottom: insets.bottom + 74 }]} pointerEvents="box-none">
+        <View
+          style={[styles.bottomStack, { bottom: insets.bottom + 74 }]}
+          pointerEvents="box-none"
+          onLayout={(e) => setBottomStackH(e.nativeEvent.layout.height + insets.bottom + 74)}
+        >
           {!loading && items.length > 0 ? (
             <MapPropertyCarousel
               ref={listRef}
@@ -441,6 +587,14 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   cappedText: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.warning },
+
+  controls: { position: 'absolute', right: 12, alignItems: 'flex-end', gap: 10 },
+  control: {
+    width: 66, paddingVertical: 9, borderRadius: radius.sm, backgroundColor: colors.white,
+    alignItems: 'center', gap: 3,
+    ...shadow.raised,
+  },
+  controlText: { fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 12, color: colors.ink, textAlign: 'center' },
 
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,250,252,0.6)' },
   emptyOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
