@@ -22,8 +22,12 @@ const { width: SCREEN_W } = Dimensions.get('window')
 export const CARD_W = SCREEN_W - 48          // peek the neighbours on both sides
 export const CARD_GAP = 12
 export const SNAP = CARD_W + CARD_GAP
-/** Photo panel ≈ 38% of the card, matching the mockup and the home mini-card. */
-const PHOTO_W = Math.min(150, Math.max(112, Math.round(CARD_W * 0.38)))
+/**
+ * Photo panel ≈ 34% of the card. Deliberately narrower than the mockup's eyeball
+ * 38%: the badge row has to seat Verified + Featured + Negotiable on ONE line,
+ * and at 38% the third badge wrapped to a second row on a 393pt phone.
+ */
+const PHOTO_W = Math.min(140, Math.max(104, Math.round(CARD_W * 0.34)))
 
 interface Props {
   items: PropertyCard[]
@@ -72,8 +76,8 @@ function Badge({ icon, label, tone }: {
 }) {
   return (
     <View style={[styles.badge, { borderColor: tone }]}>
-      <Ionicons name={icon} size={9} color={tone} />
-      <Text style={[styles.badgeText, { color: tone }]}>{label}</Text>
+      <Ionicons name={icon} size={8} color={tone} />
+      <Text style={[styles.badgeText, { color: tone }]} numberOfLines={1}>{label}</Text>
     </View>
   )
 }
@@ -91,7 +95,7 @@ function Spec({ icon, value, label }: {
 }) {
   return (
     <View style={styles.spec}>
-      <Ionicons name={icon} size={11} color={colors.muted} />
+      <Ionicons name={icon} size={10} color={colors.muted} />
       <Text style={styles.specValue} numberOfLines={1}>{value}</Text>
       <Text style={styles.specLabel} numberOfLines={1}>{label}</Text>
     </View>
@@ -175,7 +179,11 @@ function Card({ item, onOpen }: { item: PropertyCard; onOpen: (item: PropertyCar
 }
 
 const styles = StyleSheet.create({
-  list: { paddingHorizontal: 24 },
+  // flex-start, not the default stretch: a horizontal FlatList's cross axis is
+  // vertical, so every card was being stretched to the tallest sibling — which
+  // is what left a blank strip under the shorter cards. Same trap as the home
+  // featured row hit on 2026-07-20.
+  list: { paddingHorizontal: 24, alignItems: 'flex-start' },
   card: {
     width: CARD_W, flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.md, overflow: 'hidden',
     ...shadow.raised,
@@ -191,25 +199,28 @@ const styles = StyleSheet.create({
   },
   countTagText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 9, lineHeight: 12 },
 
-  body: { flex: 1, paddingHorizontal: 11, paddingVertical: 10 },
+  body: { flex: 1, paddingHorizontal: 11, paddingVertical: 8 },
 
-  badgeRow: { flexDirection: 'row', gap: 4, marginBottom: 6, flexWrap: 'wrap' },
+  // Never wraps. flexShrink lets the labels ellipsize on a very narrow phone
+  // rather than dropping to a second row, which is what the mockup shows and
+  // what pushed the card's height up by a whole line when it happened.
+  badgeRow: { flexDirection: 'row', gap: 4, marginBottom: 5, flexWrap: 'nowrap' },
   badge: {
-    flexDirection: 'row', alignItems: 'center', gap: 2.5,
-    borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 5, paddingVertical: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 2, flexShrink: 1,
+    borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 5, paddingVertical: 1.5,
   },
-  badgeText: { fontFamily: fonts.semibold, fontSize: 8.5, lineHeight: 11 },
+  badgeText: { fontFamily: fonts.semibold, fontSize: 8, lineHeight: 10, flexShrink: 1 },
 
-  title:     { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: colors.ink },
-  sub:       { fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.muted, marginTop: 1 },
-  price:     { fontFamily: fonts.extra, fontSize: 16, lineHeight: 21, color: BRAND, marginTop: 6 },
-  priceKind: { fontFamily: fonts.regular, fontSize: 9.5, lineHeight: 13, color: colors.mutedLight },
+  title:     { fontFamily: fonts.bold, fontSize: 14, lineHeight: 17, color: colors.ink },
+  sub:       { fontFamily: fonts.regular, fontSize: 11, lineHeight: 14, color: colors.muted },
+  price:     { fontFamily: fonts.extra, fontSize: 15, lineHeight: 19, color: BRAND, marginTop: 5 },
+  priceKind: { fontFamily: fonts.regular, fontSize: 9.5, lineHeight: 12, color: colors.mutedLight },
 
   specRow: {
-    flexDirection: 'row', alignItems: 'flex-start', marginTop: 8, paddingTop: 8,
+    flexDirection: 'row', alignItems: 'flex-start', marginTop: 6, paddingTop: 6,
     borderTopWidth: 1, borderTopColor: colors.borderLight,
   },
-  spec:      { flex: 1, alignItems: 'center', gap: 1 },
-  specValue: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13, color: colors.ink },
-  specLabel: { fontFamily: fonts.regular, fontSize: 8, lineHeight: 11, color: colors.mutedLight },
+  spec:      { flex: 1, alignItems: 'center' },
+  specValue: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 12, color: colors.ink },
+  specLabel: { fontFamily: fonts.regular, fontSize: 8, lineHeight: 10, color: colors.mutedLight },
 })

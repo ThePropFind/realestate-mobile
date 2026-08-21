@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Text, TextInput } from '../../src/components/Text'
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -15,6 +15,7 @@ import { MapQuickFilters } from '../../src/components/MapQuickFilters'
 import {
   activeFilterCount, filtersFromParams, filtersToParams, type SearchFilters,
 } from '../../src/lib/searchFilters'
+import { LIGHT_MAP_STYLE } from '../../src/lib/mapStyle'
 import { colors, fonts, radius, shadow } from '../../src/theme'
 import type { ListingType, PropertyCard, PropertyType, SearchParams } from '../../src/types'
 
@@ -370,6 +371,11 @@ export default function MapScreen() {
           // contrast and was the main reason this screen looked nothing like
           // the design.
           mapType="standard"
+          // Pinned to a day palette. Android renders Google's night style for
+          // `standard` whenever the host activity is in a dark theme, which
+          // turned the whole map deep blue on a phone set to dark mode; any
+          // custom style overrides that automatic switch.
+          customMapStyle={LIGHT_MAP_STYLE}
           onPress={() => select(null)}
           onMapReady={() => setMapReady(true)}
           onRegionChangeComplete={onRegionChangeComplete}
@@ -396,35 +402,10 @@ export default function MapScreen() {
           ))}
         </MapView>
 
-        {/* ── Top overlay: brand + List View, search + Filters, categories ── */}
+        {/* ── Top overlay: search + Filters, then category chips ──
+            No brand/List View header row: it cost ~50pt of map on a real phone
+            for a logo the user already sees on every other tab. */}
         <View style={styles.topOverlay} pointerEvents="box-none">
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <Image source={require('../../assets/icon.png')} style={styles.brandLogo} />
-            </View>
-            <View style={styles.brandText}>
-              <Text style={styles.brandName}>PropFind</Text>
-              <Text style={styles.brandTagline}>Find. Connect. Own.</Text>
-            </View>
-            <Pressable
-              // Carry the map's filters and keyword across — List View is the
-              // same result set in another presentation, not a reset. /search
-              // reads the keyword from `q`.
-              onPress={() => router.push({
-                pathname: '/(tabs)/search',
-                params: {
-                  ...filtersToParams(filters),
-                  ...(query.trim() ? { q: query.trim() } : {}),
-                },
-              })}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.listViewBtn, pressed && { opacity: 0.85 }]}
-            >
-              <Ionicons name="list" size={17} color={colors.ink} />
-              <Text style={styles.listViewText}>List View</Text>
-            </Pressable>
-          </View>
-
           <View style={styles.searchRow}>
             <View style={styles.searchField}>
               <Ionicons name="search" size={18} color={colors.muted} />
@@ -570,23 +551,7 @@ const styles = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: colors.bg },
   mapWrap: { flex: 1 },
 
-  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 8 },
-
-  brandRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, marginBottom: 10 },
-  brandMark: {
-    width: 40, height: 40, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: BRAND,
-    ...shadow.raised,
-  },
-  brandLogo:    { width: '100%', height: '100%' },
-  brandText:    { flex: 1 },
-  brandName:    { fontFamily: fonts.extra, fontSize: 18, lineHeight: 23, color: BRAND },
-  brandTagline: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 13, color: colors.accentDeep },
-  listViewBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    height: 40, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.white,
-    ...shadow.raised,
-  },
-  listViewText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 17, color: colors.ink },
+  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 10 },
 
   searchRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12 },
   searchField: {
