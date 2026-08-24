@@ -17,6 +17,7 @@ import { HeroBlock } from '../../src/components/property/HeroBlock'
 import { KeySpecStrip } from '../../src/components/property/KeySpecStrip'
 import { ReadMore } from '../../src/components/property/ReadMore'
 import { AmenityGrid } from '../../src/components/property/AmenityGrid'
+import { VideoSection } from '../../src/components/property/VideoSection'
 import { LocationSection } from '../../src/components/property/LocationSection'
 import { OwnerCard } from '../../src/components/property/OwnerCard'
 import { PropertyDetailsGrid } from '../../src/components/property/PropertyDetailsGrid'
@@ -214,6 +215,14 @@ export default function PropertyDetailScreen() {
           {listing.description ? (
             <SectionCard flush title="About This Property">
               <ReadMore text={listing.description} />
+            </SectionCard>
+          ) : null}
+
+          {/* ④b Walkthrough video — above amenities: it is the closest thing to a
+              visit, so it belongs high, right after the description. */}
+          {listing.videoUrl ? (
+            <SectionCard flush title="Property Walkthrough">
+              <VideoSection url={listing.videoUrl} />
             </SectionCard>
           ) : null}
 

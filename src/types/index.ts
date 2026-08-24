@@ -95,6 +95,8 @@ export interface PropertyDetail {
   cityState: string | null
   isFeatured: boolean; isVerified: boolean
   viewsCount: number; inquiryCount: number; images: PropertyImage[]; amenities: Amenity[]
+  /** Public URL of the walkthrough video (backend V19). Null when the seller uploaded none. */
+  videoUrl: string | null
   owner: OwnerInfo; createdAt: string; expiresAt: string
   // Phase B extensions
   listedBy: ListedBy | null

@@ -99,6 +99,21 @@ export const propertyApi = {
       { headers: { 'Content-Type': 'multipart/form-data' } },
     )
   },
+  /**
+   * Upload (or replace) the walkthrough video. One per listing — posting a second
+   * one replaces the first, server-side, and deletes the old object.
+   * Long timeout: a 50 MB file on Indian mobile data takes a while.
+   */
+  uploadVideo: (propertyId: string, file: { uri: string; name: string; type: string }) => {
+    const form = new FormData()
+    form.append('file', file as unknown as Blob)
+    return api.post<{ videoUrl: string }>(
+      `/properties/${propertyId}/video`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 180_000 },
+    )
+  },
+  deleteVideo: (propertyId: string) => api.delete(`/properties/${propertyId}/video`),
   getSimilar:  (id: string)               => api.get<PropertyCard[]>(`/properties/${id}/similar`),
   /** Report a listing. Public — works logged out; the server meters it at 5/hr per IP. */
   report: (propertyId: string, data: ReportListingRequest) =>

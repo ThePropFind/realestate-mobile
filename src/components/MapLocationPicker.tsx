@@ -3,7 +3,6 @@ import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, View } from 
 import { Text } from './Text'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps'
 import * as Location from 'expo-location'
 import { appAlert } from './AppAlert'
@@ -11,7 +10,6 @@ import { colors, fonts, radius, shadow, typography } from '../theme'
 
 const BRAND = colors.brand
 const ACCENT = colors.accent
-const HEADER_GRADIENT = ['#0f332f', '#184A45'] as const
 
 // Coimbatore city center — default starting point for the picker
 const COIMBATORE: Region = {
@@ -70,13 +68,13 @@ export function MapLocationPicker({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onCancel}>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <LinearGradient colors={HEADER_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <View style={styles.header}>
           <Pressable onPress={onCancel} hitSlop={8}>
             <Ionicons name="close" size={22} color="#fff" />
           </Pressable>
           <Text style={styles.headerTitle}>Pick property location</Text>
           <View style={{ width: 22 }} />
-        </LinearGradient>
+        </View>
 
         <View style={styles.mapWrap}>
           <MapView
@@ -122,7 +120,9 @@ export function MapLocationPicker({
 
 const styles = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: colors.bg },
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
+  // Solid colors.brand so it meets the root layout's status-bar band seamlessly
+  // — same reason as the post wizard's header.
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, backgroundColor: BRAND },
   headerTitle: { ...typography.navTitle, color: '#fff' },
 
   mapWrap:     { flex: 1 },

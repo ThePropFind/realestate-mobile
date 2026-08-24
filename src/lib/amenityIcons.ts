@@ -8,7 +8,7 @@ type IconName = keyof typeof Ionicons.glyphMap
  *
  * The detail page previously drew the same checkmark next to all 23 amenities,
  * which made the grid a list of words — nothing was scannable. Keys come from the
- * amenities table (V2 seed + V14), so a new amenity row that lands here without a
+ * amenities table (V2 seed + V14 + V18), so a new amenity row that lands here without a
  * mapping falls through to FALLBACK rather than rendering blank.
  */
 const AMENITY_ICONS: Record<string, IconName> = {
@@ -40,6 +40,13 @@ const AMENITY_ICONS: Record<string, IconName> = {
   // against the outline one used for water supply — the pair stays distinguishable.
   'swimming-pool':'water',
   tennis:        'tennisball-outline',
+  // land & farm (V18) — shown only on plot / agricultural listings
+  'farm-house':      'home-outline',
+  'storage-shed':    'cube-outline',
+  'drip-irrigation': 'rainy-outline',
+  'farm-road':       'trail-sign-outline',
+  'cattle-shed':     'paw-outline',
+  'water-tank':      'beaker-outline',
 }
 
 const FALLBACK: IconName = 'checkmark-circle-outline'

@@ -70,6 +70,12 @@ function rowsFor(data: PropertyDetail): Row[] {
     push('approval',     'document-text-outline', 'Approval',   data.approvalAuthority ? approvalShort(data.approvalAuthority) : null)
     push('boundaryWall', 'square-outline',        'Compound Wall', data.boundaryWall == null ? null : data.boundaryWall ? 'Built' : 'Not built')
     push('cornerPlot',   'git-branch-outline',    'Corner Plot',   data.cornerPlot == null ? null : data.cornerPlot ? 'Yes' : 'No')
+    push('fenced',       'shield-outline',        'Fenced',        data.fenced == null ? null : data.fenced ? 'Yes' : 'No')
+    // Water and power are the first two questions a plot buyer asks, and the
+    // post wizard collects them for every land listing — not just farmland.
+    push('water',        'water-outline',         'Water Source',  data.waterSource ? prettyEnum(data.waterSource) : null)
+    push('hasWell',      'ellipse-outline',       'Open Well',     data.hasWell == null ? null : data.hasWell ? 'Yes' : 'No')
+    push('power',        'flash-outline',         'Power',         data.electricService ? prettyEnum(data.electricService) : null)
     push('ownership',    'key-outline',           'Ownership',     data.ownershipType ? prettyEnum(data.ownershipType) : null)
     push('facing',       'compass-outline',       'Facing',        data.facing)
     return rows
