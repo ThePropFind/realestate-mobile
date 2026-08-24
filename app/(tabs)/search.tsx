@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Dimensions, FlatList, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
+import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { Text, TextInput } from '../../src/components/Text'
 import { ListSkeleton } from '../../src/components/Skeleton'
+import { PropertyResultCard } from '../../src/components/property/PropertyResultCard'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,15 +15,11 @@ import { useNoticeCount } from '../../src/lib/notifications'
 import { useAuthStore } from '../../src/store/authStore'
 import { useLocationStore } from '../../src/store/locationStore'
 import { colors, fonts, radius, shadow } from '../../src/theme'
-import type { PriceUnit, PropertyCard, PropertyType, SearchParams } from '../../src/types'
+import type { PropertyCard, PropertyType, SearchParams } from '../../src/types'
 
 const BRAND = colors.brand
 const ACCENT = colors.accent
 const COMMERCIAL: PropertyType[] = ['COMMERCIAL_OFFICE', 'COMMERCIAL_SHOP']
-
-// Photo panel ≈ the mock's 36% of the screen. What is left over has to hold the
-// Call / WhatsApp / View Details row, which is why that row's type is this small.
-const IMAGE_W = Math.min(165, Math.max(130, Math.round(Dimensions.get('window').width * 0.36)))
 
 // The four category tabs. Each is a shorthand for a set of search filters, so
 // the filter object stays the single source of truth and the sheet and the tabs
@@ -258,7 +255,7 @@ export default function SearchScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Row
+          <PropertyResultCard
             item={item}
             saved={savedIds.has(item.id)}
             onToggleSave={toggleSave}
@@ -286,10 +283,6 @@ function num(v?: string): number | undefined {
   return v && Number.isFinite(n) ? n : undefined
 }
 
-function propertyTypeLabel(t: PropertyType): string {
-  return t.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' ')
-}
-
 function SortChip({ label, on, chevron, onPress }: { label: string; on: boolean; chevron?: 'chevron-down' | 'chevron-up'; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={[styles.sortChip, on && styles.sortChipActive]}>
@@ -297,102 +290,6 @@ function SortChip({ label, on, chevron, onPress }: { label: string; on: boolean;
       {chevron ? <Ionicons name={chevron} size={15} color={on ? BRAND : colors.ink} /> : null}
     </Pressable>
   )
-}
-
-function Row({ item, saved, onToggleSave, onContact, onPress }: {
-  item: PropertyCard
-  saved: boolean
-  onToggleSave: (id: string) => void
-  onContact: (item: PropertyCard, mode: 'call' | 'whatsapp') => void
-  onPress: () => void
-}) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
-      <View style={styles.cardImageWrap}>
-        {item.primaryImageUrl ? (
-          <Image source={{ uri: item.primaryImageUrl }} style={styles.cardImage} resizeMode="cover" />
-        ) : (
-          <View style={[styles.cardImage, styles.noImage]}><Ionicons name="image-outline" size={28} color={colors.mutedLight} /></View>
-        )}
-        {item.isFeatured ? (
-          <View style={styles.featuredBadge}>
-            <Ionicons name="star" size={10} color="#fff" />
-            <Text style={styles.featuredBadgeText}>Featured</Text>
-          </View>
-        ) : null}
-        <Pressable onPress={() => onToggleSave(item.id)} hitSlop={8} style={({ pressed }) => [styles.heart, pressed && { opacity: 0.8 }]}>
-          <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? ACCENT : colors.muted} />
-        </Pressable>
-      </View>
-
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-        <View style={styles.locRow}>
-          <Ionicons name="location" size={12} color={colors.muted} />
-          <Text style={styles.cardLoc} numberOfLines={1}>{item.localityName}, {item.cityName}</Text>
-        </View>
-        <Text style={styles.cardPrice}>{formatPrice(item.price, item.priceUnit)}</Text>
-
-        <View style={styles.chipRow}>
-          {item.isVerified ? (
-            <View style={styles.chip}>
-              <Ionicons name="shield-checkmark-outline" size={12} color={BRAND} />
-              <Text style={styles.chipText}>Verified</Text>
-            </View>
-          ) : null}
-          <View style={styles.chip}>
-            <Ionicons name="checkmark-circle-outline" size={12} color={BRAND} />
-            <Text style={styles.chipText}>{propertyTypeLabel(item.propertyType)}</Text>
-          </View>
-        </View>
-
-        {/* Specs, split by hairline dividers as in the mock */}
-        <View style={styles.specRow}>
-          {specsOf(item).map((s, i) => (
-            <View key={s.label} style={styles.specCell}>
-              {i > 0 ? <View style={styles.specDivider} /> : null}
-              <Ionicons name={s.icon} size={14} color={colors.muted} />
-              <Text style={styles.specText} numberOfLines={1}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Actions sit in the body column, right of the photo, as in the mock —
-            which only fits at this type size. Labels shrink before overflowing. */}
-        <View style={styles.actionRow}>
-          <Pressable onPress={() => onContact(item, 'call')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
-            <Ionicons name="call" size={12} color={BRAND} />
-            <Text style={styles.linkText} numberOfLines={1}>Call</Text>
-          </Pressable>
-          <Pressable onPress={() => onContact(item, 'whatsapp')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
-            <Ionicons name="logo-whatsapp" size={12} color={colors.success} />
-            <Text style={[styles.linkText, { color: colors.success }]} numberOfLines={1}>WhatsApp</Text>
-          </Pressable>
-          <Pressable onPress={onPress} style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.85 }]}>
-            <Text style={styles.detailBtnText} numberOfLines={1}>View Details</Text>
-            <Ionicons name="arrow-forward" size={10} color="#fff" />
-          </Pressable>
-        </View>
-      </View>
-    </Pressable>
-  )
-}
-
-/** The mock's spec strip: beds · area · baths, whichever the listing has. */
-function specsOf(item: PropertyCard): { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }[] {
-  const specs: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }[] = []
-  if (item.bedrooms)  specs.push({ icon: 'bed-outline',   label: `${item.bedrooms} BHK` })
-  specs.push({ icon: 'scan-outline', label: `${item.areaSqft} sq.ft` })
-  if (item.bathrooms) specs.push({ icon: 'water-outline', label: String(item.bathrooms) })
-  return specs
-}
-
-function formatPrice(price: number, unit: PriceUnit): string {
-  if (unit === 'PER_MONTH') return `₹${price.toLocaleString('en-IN')}/mo`
-  if (unit === 'PER_SQFT')  return `₹${price.toLocaleString('en-IN')}/sqft`
-  if (price >= 10_000_000)  return `₹${(price / 10_000_000).toFixed(2)} Cr`
-  if (price >= 100_000)     return `₹${(price / 100_000).toFixed(2)} Lakh`
-  return `₹${price.toLocaleString('en-IN')}`
 }
 
 const styles = StyleSheet.create({
@@ -443,40 +340,4 @@ const styles = StyleSheet.create({
   emptyIcon:   { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
   empty:       { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 12, textAlign: 'center' },
 
-  // Card — photo panel on the left, rounded on all four corners so the white
-  // card peeks out behind it as in the mock. `overflow: 'hidden'` is the hard
-  // stop that keeps the action row from ever painting past the card edge.
-  // Own horizontal margin — the list's contentContainer can't pad the cards now
-  // that the search/tabs/sort header shares it.
-  card:        { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.lg, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden', ...shadow.card },
-  cardImageWrap:{ width: IMAGE_W, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.border },
-  cardImage:   { flex: 1, width: '100%' },
-  noImage:     { alignItems: 'center', justifyContent: 'center' },
-  featuredBadge:{ position: 'absolute', top: 9, left: 9, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: ACCENT, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.sm },
-  featuredBadgeText: { fontFamily: fonts.semibold, fontSize: 10, lineHeight: 13, color: '#fff' },
-  heart:       { position: 'absolute', top: 9, right: 9, width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.92)' },
-
-  cardBody:    { flex: 1, paddingVertical: 10, paddingHorizontal: 8, gap: 4 },
-  cardTitle:   { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.ink },
-  locRow:      { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  cardLoc:     { fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.muted, flexShrink: 1 },
-  cardPrice:   { fontFamily: fonts.extra, fontSize: 18, lineHeight: 24, color: BRAND },
-
-  chipRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  chip:        { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.brandTint, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7 },
-  chipText:    { fontFamily: fonts.medium, fontSize: 10, lineHeight: 13, color: BRAND },
-
-  specRow:     { flexDirection: 'row', alignItems: 'center', paddingTop: 3 },
-  specCell:    { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 },
-  specDivider: { width: 1, height: 14, backgroundColor: colors.border, marginHorizontal: 7 },
-  specText:    { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.ink },
-
-  // Sized so the three controls total ~180pt inside a ~204pt column: the slack
-  // lands as visible air before the pill (marginLeft: 'auto'). Any larger type
-  // here and they touch — the photo owns the rest of the card's width.
-  actionRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 8, marginTop: 3 },
-  linkBtn:     { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 },
-  linkText:    { fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 12, color: BRAND },
-  detailBtn:   { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: BRAND, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 6, marginLeft: 'auto', flexShrink: 0 },
-  detailBtnText:{ fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 12, color: '#fff' },
 })

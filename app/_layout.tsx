@@ -146,6 +146,8 @@ function RootLayout() {
           }}
         />
         <Stack.Screen name="my-listings" options={{ headerShown: false }} />
+        {/* Paints its own brand header, like the other full-bleed screens. */}
+        <Stack.Screen name="compare" options={{ headerShown: false }} />
         <Stack.Screen name="emi-calculator" options={{ headerShown: false }} />
       </Stack>
       {/* Last sibling so it paints above everything the Stack renders. */}

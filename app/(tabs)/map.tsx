@@ -11,13 +11,12 @@ import { appAlert } from '../../src/components/AppAlert'
 import { useLocationStore } from '../../src/store/locationStore'
 import { MapPriceMarker } from '../../src/components/MapPriceMarker'
 import { MapPropertyCarousel, SNAP } from '../../src/components/MapPropertyCarousel'
-import { MapQuickFilters } from '../../src/components/MapQuickFilters'
 import {
   activeFilterCount, filtersFromParams, filtersToParams, type SearchFilters,
 } from '../../src/lib/searchFilters'
 import { LIGHT_MAP_STYLE } from '../../src/lib/mapStyle'
 import { colors, fonts, radius, shadow } from '../../src/theme'
-import type { ListingType, PropertyCard, PropertyType, SearchParams } from '../../src/types'
+import type { PropertyCard, PropertyType, SearchParams } from '../../src/types'
 
 const BRAND = colors.brand
 
@@ -25,9 +24,10 @@ const BRAND = colors.brand
 // Anything past it does not exist as far as this screen is concerned, which is
 // why the result count below is shown rather than hidden — see `capped`.
 const PAGE_SIZE = 100
-// Distance from insets.bottom to the foot of the bottom stack. Tuned against
-// the tab bar (66 + insets.bottom) and the quick-filter strip's shadow gutter.
-const BOTTOM_STACK_GAP = 62
+// Distance from insets.bottom to the foot of the bottom stack (the carousel).
+// Back to 74 now that the quick-filter strip and its shadow gutter are gone —
+// the carousel needs to clear the tab bar (66 + insets.bottom) and the Post FAB.
+const BOTTOM_STACK_GAP = 74
 
 // Coimbatore city center — the fallback viewport before any bounds search.
 const COIMBATORE: Region = {
@@ -320,10 +320,6 @@ export default function MapScreen() {
     }))
   }
 
-  const pickListingType = (t: ListingType) => {
-    setFilters((f) => ({ ...f, listingType: f.listingType === t ? undefined : t }))
-  }
-
   const openFilters = () => router.push({
     pathname: '/filters',
     // `origin` tells the modal to come back here on Apply instead of /search.
@@ -541,14 +537,16 @@ export default function MapScreen() {
           </View>
         ) : null}
 
-        {/* ── Bottom stack: card carousel over the quick-filter strip ──
+        {/* ── Bottom stack: the card carousel ──
             Positioned off insets.bottom, not a bare 84: the tab bar is
             66 + insets.bottom and the Post FAB sits above it, so on
             gesture-nav Android a fixed offset hides behind both.
-            62, not the old 74: the quick-filter strip grew a 16pt shadow
-            gutter at its foot, so the buttons land within 2pt of where they
-            always were and only the (transparent) gutter tucks behind the
-            tab bar, where the tail of the shadow is invisible anyway. */}
+            The Buy/Rent/Price/Property-Type strip that used to sit under the
+            carousel is GONE. It never had room down here — it was fighting the
+            tab bar and the Post FAB for the same band of screen, and its
+            shadow could not clear either. Everything it offered is in the
+            Filters button at the top of the map, which is a better home for it:
+            one filter surface, not two that have to be kept in agreement. */}
         <View
           style={[styles.bottomStack, { bottom: insets.bottom + BOTTOM_STACK_GAP }]}
           pointerEvents="box-none"
@@ -562,11 +560,6 @@ export default function MapScreen() {
               onSnap={onSnap}
             />
           ) : null}
-          <MapQuickFilters
-            filters={filters}
-            onListingType={pickListingType}
-            onOpenFilters={openFilters}
-          />
         </View>
       </View>
     </SafeAreaView>
