@@ -222,7 +222,8 @@ export default function SavedScreen() {
             item={item}
             saved
             onToggleSave={unsave}
-            /* No onContact: Saved drops the Call / WhatsApp links. */
+            /* No onContact: Saved drops the whole action row — Call,
+               WhatsApp and View Details. Tapping the card opens it. */
             selected={selected.has(item.id)}
             onToggleSelect={toggleSelect}
             onPress={() => router.push(`/properties/${item.id}`)}

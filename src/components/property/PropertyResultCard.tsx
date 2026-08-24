@@ -18,9 +18,9 @@ interface Props {
   onToggleSave: (id: string) => void
   onPress: () => void
   /**
-   * Omit to drop the Call / WhatsApp links. Saved passes nothing: you already
-   * decided you like these, and the card is a way back to them, not a pitch.
-   * "View Details" survives either way, so the action row never renders empty.
+   * Omit to drop the entire action row — Call, WhatsApp and View Details.
+   * Saved passes nothing: you already decided you like these, and the card is
+   * a way back to them, not a pitch.
    */
   onContact?: (item: PropertyCard, mode: 'call' | 'whatsapp') => void
   /**
@@ -110,25 +110,27 @@ export function PropertyResultCard({
         </View>
 
         {/* Actions sit in the body column, right of the photo, as in the mock —
-            which only fits at this type size. Labels shrink before overflowing. */}
-        <View style={styles.actionRow}>
-          {onContact ? (
-            <>
-              <Pressable onPress={() => onContact(item, 'call')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
-                <Ionicons name="call" size={12} color={BRAND} />
-                <Text style={styles.linkText} numberOfLines={1}>Call</Text>
-              </Pressable>
-              <Pressable onPress={() => onContact(item, 'whatsapp')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
-                <Ionicons name="logo-whatsapp" size={12} color={colors.success} />
-                <Text style={[styles.linkText, { color: colors.success }]} numberOfLines={1}>WhatsApp</Text>
-              </Pressable>
-            </>
-          ) : null}
-          <Pressable onPress={onPress} style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.85 }]}>
-            <Text style={styles.detailBtnText} numberOfLines={1}>View Details</Text>
-            <Ionicons name="arrow-forward" size={10} color="#fff" />
-          </Pressable>
-        </View>
+            which only fits at this type size. Labels shrink before overflowing.
+            The WHOLE row is tied to `onContact`: without it the only control
+            left would be "View Details", which is what tapping the card already
+            does. A button that repeats the gesture it sits inside is noise, so
+            Saved gets no action row at all. */}
+        {onContact ? (
+          <View style={styles.actionRow}>
+            <Pressable onPress={() => onContact(item, 'call')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
+              <Ionicons name="call" size={12} color={BRAND} />
+              <Text style={styles.linkText} numberOfLines={1}>Call</Text>
+            </Pressable>
+            <Pressable onPress={() => onContact(item, 'whatsapp')} hitSlop={10} style={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.6 }]}>
+              <Ionicons name="logo-whatsapp" size={12} color={colors.success} />
+              <Text style={[styles.linkText, { color: colors.success }]} numberOfLines={1}>WhatsApp</Text>
+            </Pressable>
+            <Pressable onPress={onPress} style={({ pressed }) => [styles.detailBtn, pressed && { opacity: 0.85 }]}>
+              <Text style={styles.detailBtnText} numberOfLines={1}>View Details</Text>
+              <Ionicons name="arrow-forward" size={10} color="#fff" />
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   )
