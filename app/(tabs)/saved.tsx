@@ -10,7 +10,7 @@ import { appAlert } from '../../src/components/AppAlert'
 import { favoritesApi } from '../../src/lib/api'
 import { COMPARE_MAX, COMPARE_MIN, useCompareStore } from '../../src/lib/compareStore'
 import { useAuthStore } from '../../src/store/authStore'
-import { colors, fonts, radius, shadow } from '../../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 import type { PropertyCard, PropertyType } from '../../src/types'
 
 const BRAND  = colors.brand
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   headerTopRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerTitleWrap: { flex: 1 },
   headerTitleRow:  { flexDirection: 'row', alignItems: 'center', gap: 9, flexWrap: 'wrap' },
-  headerTitle:     { fontFamily: fonts.bold, fontSize: 21, lineHeight: 27, color: colors.white },
+  headerTitle:     { ...typography.screenTitle, color: colors.white },
   savedPill:       { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.14)', paddingHorizontal: 9, paddingVertical: 4, borderRadius: radius.pill },
   savedPillText:   { fontFamily: fonts.semibold, fontSize: 11.5, lineHeight: 15, color: colors.white },
   headerSub:       { fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: 'rgba(255,255,255,0.82)', marginTop: 3 },

@@ -4,7 +4,7 @@ import { Text } from '../src/components/Text'
 import { useRouter } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, fonts, radius, shadow } from '../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../src/theme'
 
 const BRAND      = colors.brand
 const PRINCIPAL  = '#1b2f6b'   // dark navy — principal share
@@ -240,7 +240,7 @@ function RingProgress({
 const styles = StyleSheet.create({
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
   backBtn:       { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  headerTitle:   { fontFamily: fonts.bold, fontSize: 18, color: INK },
+  headerTitle:   { ...typography.navTitle, color: INK },
 
   donutWrap:     { alignItems: 'center', paddingTop: 24, paddingBottom: 8 },
   donutLabel:    { fontFamily: fonts.semibold, fontSize: 13, color: MUTED },

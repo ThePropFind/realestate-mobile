@@ -1,4 +1,5 @@
 import { Dimensions, Image, Pressable, StyleSheet, View } from 'react-native'
+import type { StyleProp, ViewStyle } from 'react-native'
 import { Text } from '../Text'
 import { Ionicons } from '@expo/vector-icons'
 import { formatPrice, prettyEnum } from '../../lib/format'
@@ -14,9 +15,16 @@ const IMAGE_W = Math.min(165, Math.max(130, Math.round(Dimensions.get('window').
 
 interface Props {
   item: PropertyCard
-  saved: boolean
-  onToggleSave: (id: string) => void
   onPress: () => void
+  /**
+   * Omit BOTH to drop the heart. The public seller profile does that: it has no
+   * favourites set to colour it from, and a heart that cannot show the true
+   * state is worse than none.
+   */
+  saved?: boolean
+  onToggleSave?: (id: string) => void
+  /** Override the card's own margins — it carries page margins by default. */
+  style?: StyleProp<ViewStyle>
   /**
    * Omit to drop the entire action row — Call, WhatsApp and View Details.
    * Saved passes nothing: you already decided you like these, and the card is
@@ -40,12 +48,13 @@ interface Props {
  * no screen-specific branches inside.
  */
 export function PropertyResultCard({
-  item, saved, onToggleSave, onPress, onContact, selected, onToggleSelect,
+  item, onPress, saved, onToggleSave, style, onContact, selected, onToggleSelect,
 }: Props) {
   const selectable = selected !== undefined && onToggleSelect !== undefined
+  const savable = onToggleSave !== undefined
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, style, pressed && { opacity: 0.9 }]}>
       <View style={styles.cardImageWrap}>
         {item.primaryImageUrl ? (
           <Image source={{ uri: item.primaryImageUrl }} style={styles.cardImage} resizeMode="cover" />
@@ -58,9 +67,11 @@ export function PropertyResultCard({
             <Text style={styles.featuredBadgeText}>Featured</Text>
           </View>
         ) : null}
-        <Pressable onPress={() => onToggleSave(item.id)} hitSlop={8} style={({ pressed }) => [styles.heart, pressed && { opacity: 0.8 }]}>
-          <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? ACCENT : colors.muted} />
-        </Pressable>
+        {savable ? (
+          <Pressable onPress={() => onToggleSave(item.id)} hitSlop={8} style={({ pressed }) => [styles.heart, pressed && { opacity: 0.8 }]}>
+            <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? ACCENT : colors.muted} />
+          </Pressable>
+        ) : null}
         {/* Bottom-left of the photo — the one corner the Featured badge and the
             heart never claim, so the checkbox needs no layout of its own. */}
         {selectable ? (

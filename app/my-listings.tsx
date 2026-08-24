@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { propertyApi } from '../src/lib/api'
 import { useAuthStore } from '../src/store/authStore'
-import { colors, fonts, radius, shadow } from '../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../src/theme'
 import type { ListingStatus, PriceUnit, PropertyCard } from '../src/types'
 
 const BRAND  = colors.brand
@@ -169,7 +169,7 @@ function formatPrice(price: number, unit: PriceUnit): string {
 const styles = StyleSheet.create({
   safe:         { flex: 1, backgroundColor: colors.bg },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
-  headerTitle:  { fontFamily: fonts.bold, fontSize: 18, color: '#fff' },
+  headerTitle:  { ...typography.navTitle, color: '#fff' },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   emptyIcon:    { width: 84, height: 84, borderRadius: 42, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   emptyTitle:   { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, marginTop: 2 },

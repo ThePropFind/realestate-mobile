@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { formatPrice, listingTypeLabel, prettyEnum, priceTypeLabel } from '../src/lib/format'
 import { useCompareStore } from '../src/lib/compareStore'
-import { colors, fonts, radius, shadow } from '../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../src/theme'
 import type { PropertyCard } from '../src/types'
 
 const BRAND = colors.brand
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
 
   header:      { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: 16, paddingBottom: 16, backgroundColor: BRAND },
-  headerTitle: { fontFamily: fonts.bold, fontSize: 21, lineHeight: 27, color: colors.white },
+  headerTitle: { ...typography.screenTitle, color: colors.white },
   headerSub:   { fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: 'rgba(255,255,255,0.82)', marginTop: 2 },
 
   center:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },

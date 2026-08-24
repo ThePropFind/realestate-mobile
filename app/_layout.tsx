@@ -18,7 +18,7 @@ import { useAuthStore } from '../src/store/authStore'
 import { useReduceMotion } from '../src/lib/useReduceMotion'
 import { BLEND_FADE_PX, blendScrollY, useStatusBarBlendHeight } from '../src/lib/statusBarBlend'
 import { AppAlertHost } from '../src/components/AppAlert'
-import { colors, fonts } from '../src/theme'
+import { colors, fonts, typography } from '../src/theme'
 
 // Make Plus Jakarta Sans the default family for every <Text> so screens we
 // haven't restyled yet still pick up the new typeface. Headings/buttons override
@@ -158,7 +158,7 @@ function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  headerTitle: { fontFamily: fonts.bold, fontSize: 18, color: '#fff' },
+  headerTitle: { ...typography.navTitle, color: '#fff' },
   statusBarBackdrop: {
     position: 'absolute', top: 0, left: 0, right: 0,
     // zIndex only — NO elevation. Elevation on Android casts a Material shadow,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Dimensions, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -8,18 +8,14 @@ import { Image } from 'react-native'
 import { Text } from '../../src/components/Text'
 import { ListSkeleton } from '../../src/components/Skeleton'
 import { SectionCard } from '../../src/components/property/SectionCard'
-import { PropertyMiniCard } from '../../src/components/property/PropertyMiniCard'
+import { PropertyResultCard } from '../../src/components/property/PropertyResultCard'
 import { userApi } from '../../src/lib/api'
 import { memberSinceLabel, prettyEnum } from '../../src/lib/format'
-import { colors, fonts, radius, spacing } from '../../src/theme'
+import { colors, fonts, radius, spacing, typography } from '../../src/theme'
 import type { PublicProfile } from '../../src/types'
 
+// Gap between stacked listing cards inside the "Active listings" section.
 const GRID_GAP = spacing.md
-// Two cards per row inside a SectionCard (16px page margin + 16px card padding
-// on each side), so the width has to come out of the real available space rather
-// than a fixed constant — 190px twice does not fit a 360dp phone.
-const CARD_WIDTH =
-  (Dimensions.get('window').width - spacing.lg * 2 - spacing.lg * 2 - GRID_GAP) / 2
 
 /**
  * Public seller / agent profile — what "View Profile" on a listing opens.
@@ -113,12 +109,18 @@ export default function PublicProfileScreen() {
 
           <SectionCard title={`Active listings (${profile.activeListingCount})`}>
             {profile.listings.length ? (
-              <View style={styles.grid}>
+              /* The same card the Saved tab and the results list use, rather
+                 than a two-up grid of mini cards: one listing per row reads at
+                 a glance, and it is one card to maintain instead of two.
+                 No heart and no Call/WhatsApp here — this screen holds neither
+                 a favourites set nor a reason to re-pitch the seller you are
+                 already looking at. */
+              <View>
                 {profile.listings.map((item) => (
-                  <PropertyMiniCard
+                  <PropertyResultCard
                     key={item.id}
                     item={item}
-                    width={CARD_WIDTH}
+                    style={styles.listingCard}
                     onPress={() => router.push(`/properties/${item.id}`)}
                   />
                 ))}
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
   },
-  headerTitle: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 24, color: colors.ink },
+  headerTitle: { ...typography.navTitle },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
   errorText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
@@ -176,7 +178,8 @@ const styles = StyleSheet.create({
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 5, marginTop: spacing.lg },
   noteText: { fontFamily: fonts.regular, fontSize: 11, lineHeight: 16, color: colors.muted, flex: 1 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
+  // The card carries page margins of its own; inside a SectionCard it must not.
+  listingCard: { marginHorizontal: 0, marginBottom: GRID_GAP },
   empty: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, color: colors.muted },
   more: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 15, color: colors.muted, marginTop: spacing.md },
 })

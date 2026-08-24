@@ -17,7 +17,7 @@ import { bookingsApi } from '../../src/lib/api'
 import { ConfirmSheet } from '../../src/components/ConfirmSheet'
 import { appAlert } from '../../src/components/AppAlert'
 import { useAuthStore } from '../../src/store/authStore'
-import { colors, fonts, radius, shadow } from '../../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 import type { BookingStatus, SiteVisitBooking } from '../../src/types'
 
 const BRAND  = colors.brand
@@ -220,7 +220,7 @@ function BookingCard({
 const styles = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: colors.bg },
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, backgroundColor: colors.brand },
-  headerTitle: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, color: colors.white },
+  headerTitle: { ...typography.screenTitle, color: colors.white },
   headerCount: { fontFamily: fonts.semibold, fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   emptyIcon:   { width: 84, height: 84, borderRadius: 42, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },

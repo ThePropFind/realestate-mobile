@@ -31,7 +31,7 @@ import {
   resolvePropertyType, isPlotOrLand, isBuilding,
   type Category, type CategoryGroup, type WizardState,
 } from '../src/lib/postWizard'
-import { colors, fonts, radius, shadow } from '../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../src/theme'
 import type { Locality, Amenity, ListingType, ListedBy, PropertyType } from '../src/types'
 
 const BRAND = colors.brand
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
   safe:           { flex: 1, backgroundColor: colors.bg },
   center:         { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
   header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
-  headerTitle:    { fontFamily: fonts.bold, fontSize: 17, color: '#fff' },
+  headerTitle:    { ...typography.navTitle, color: '#fff' },
   headerSub:      { fontFamily: fonts.regular, fontSize: 11, color: '#cfe1f6', marginTop: 1 },
   progressBar:    { height: 3, backgroundColor: colors.border },
   progressFill:   { height: 3, backgroundColor: ACCENT },

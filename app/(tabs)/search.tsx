@@ -14,7 +14,7 @@ import { favoritesApi, propertyApi } from '../../src/lib/api'
 import { useNoticeCount } from '../../src/lib/notifications'
 import { useAuthStore } from '../../src/store/authStore'
 import { useLocationStore } from '../../src/store/locationStore'
-import { colors, fonts, radius, shadow } from '../../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 import type { PropertyCard, PropertyType, SearchParams } from '../../src/types'
 
 const BRAND = colors.brand
@@ -299,9 +299,11 @@ const styles = StyleSheet.create({
   // under the title's first letter (not under the arrow).
   header:      { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
   backBtn:     { marginTop: 3 },
-  headerTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 31, color: colors.ink },
+  // typography.screenTitle. Was 24/31 — the single largest heading in the app
+  // after home's hero, on a screen that is a list of results, not a landing.
+  headerTitle: { ...typography.screenTitle },
   cityRow:     { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
-  cityText:    { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
+  cityText:    { fontFamily: fonts.medium, fontSize: 13, lineHeight: 17, color: colors.ink },
   bellBtn:     { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   bellBadge:   { position: 'absolute', top: 0, right: 0, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   bellBadgeText: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13, color: '#fff' },
@@ -309,9 +311,10 @@ const styles = StyleSheet.create({
   // Same recipe as the home search bar (app/(tabs)/index.tsx → searchBar):
   // textAlignVertical + zero padding is what keeps the text on the icon's centre.
   searchWrap:  { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white, marginHorizontal: 16, marginTop: 6, borderRadius: radius.lg, paddingLeft: 16, paddingRight: 6, paddingVertical: 6, ...shadow.card },
-  searchInput: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.ink, padding: 0, textAlignVertical: 'center' },
+  // 13, matching home's search field — this row is the same control.
+  searchInput: { flex: 1, fontFamily: fonts.medium, fontSize: 13, color: colors.ink, padding: 0, textAlignVertical: 'center' },
   filterBtn:   { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: BRAND, borderRadius: radius.md, paddingHorizontal: 16, paddingVertical: 12 },
-  filterBtnText:   { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18, color: '#fff' },
+  filterBtnText:   { fontFamily: fonts.semibold, fontSize: 12.5, lineHeight: 17, color: '#fff' },
   filterCount:     { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
   filterCountText: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 13, color: BRAND },
 
@@ -324,16 +327,16 @@ const styles = StyleSheet.create({
   tabRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 16, paddingVertical: 12 },
   tab:         { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.sm, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   tabActive:   { backgroundColor: BRAND, borderColor: BRAND },
-  tabText:     { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18, color: colors.ink },
+  tabText:     { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 17, color: colors.ink },
   tabTextActive:{ color: '#fff' },
 
   sortRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 16, paddingBottom: 12 },
   // marginTop instead of alignSelf: 'center' — see the note on tabRow.
-  sortLabel:   { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.ink, marginRight: 2, marginTop: 7 },
+  sortLabel:   { fontFamily: fonts.bold, fontSize: 13.5, lineHeight: 18, color: colors.ink, marginRight: 2, marginTop: 8 },
   // Selected chip is white-with-a-border in the mock, not a filled brand pill.
   sortChip:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: '#ECEAE4', borderWidth: 1, borderColor: 'transparent' },
   sortChipActive: { backgroundColor: colors.white, borderColor: BRAND },
-  sortChipText:   { fontFamily: fonts.medium, fontSize: 13, lineHeight: 16, color: colors.ink },
+  sortChipText:   { fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 16, color: colors.ink },
   sortChipTextActive: { fontFamily: fonts.semibold },
 
   center:      { padding: 60, alignItems: 'center' },

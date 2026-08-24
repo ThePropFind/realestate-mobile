@@ -8,7 +8,7 @@ import { ChipRow } from '../src/components/ChipRow'
 import { OptionTileGroup, type TileOption } from '../src/components/OptionTile'
 import { propertyApi, searchApi } from '../src/lib/api'
 import { useLocationStore } from '../src/store/locationStore'
-import { colors, fonts, radius, shadow } from '../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../src/theme'
 import type {
   Amenity, ApprovalAuthority, Facing, FurnishingStatus, ListedBy, ListingType,
   Locality, PossessionStatus, PropertyType, SearchParams,
@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand, paddingHorizontal: 16, paddingVertical: 14,
   },
   headerBtn:    { width: 28, alignItems: 'flex-start' },
-  headerTitle:  { fontFamily: fonts.bold, fontSize: 19, lineHeight: 25, color: '#fff' },
+  headerTitle:  { ...typography.navTitle, color: '#fff' },
   headerSub:    { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, color: 'rgba(255,255,255,0.8)' },
   headerReset:  { fontFamily: fonts.bold, fontSize: 14, color: colors.accent },
 

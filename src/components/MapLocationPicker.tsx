@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps'
 import * as Location from 'expo-location'
 import { appAlert } from './AppAlert'
-import { colors, fonts, radius, shadow } from '../theme'
+import { colors, fonts, radius, shadow, typography } from '../theme'
 
 const BRAND = colors.brand
 const ACCENT = colors.accent
@@ -123,7 +123,7 @@ export function MapLocationPicker({
 const styles = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: colors.bg },
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
-  headerTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 17 },
+  headerTitle: { ...typography.navTitle, color: '#fff' },
 
   mapWrap:     { flex: 1 },
   gpsBtn:      {
