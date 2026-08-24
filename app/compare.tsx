@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink },
   emptySub:   { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6, textAlign: 'center', lineHeight: 19 },
   cta:        { marginTop: 18, backgroundColor: BRAND, paddingHorizontal: 22, paddingVertical: 12, borderRadius: radius.sm },
-  ctaText:    { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  ctaText:    { ...typography.button },
 
   // One card holding the whole grid, so the zebra rows are clipped to the
   // rounded corners instead of painting square edges over them.

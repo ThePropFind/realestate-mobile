@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native'
 import { Text } from '../Text'
 import { Ionicons } from '@expo/vector-icons'
 import { formatPrice, prettyEnum } from '../../lib/format'
-import { colors, fonts, radius, shadow } from '../../theme'
+import { colors, fonts, radius, shadow, typography } from '../../theme'
 import type { PropertyCard } from '../../types'
 
 const BRAND = colors.brand
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   checkboxOn:  { backgroundColor: BRAND, borderColor: BRAND },
 
   cardBody:    { flex: 1, paddingVertical: 10, paddingHorizontal: 8, gap: 4 },
-  cardTitle:   { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, color: colors.ink },
+  cardTitle:   { ...typography.cardTitle },
   locRow:      { flexDirection: 'row', alignItems: 'center', gap: 3 },
   cardLoc:     { fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.muted, flexShrink: 1 },
   cardPrice:   { fontFamily: fonts.extra, fontSize: 18, lineHeight: 24, color: BRAND },

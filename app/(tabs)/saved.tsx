@@ -395,11 +395,11 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, marginTop: 2, textAlign: 'center' },
   emptySub:   { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6, textAlign: 'center', lineHeight: 19 },
   cta:        { marginTop: 18, backgroundColor: ACCENT, paddingHorizontal: 24, paddingVertical: 12, borderRadius: radius.sm, ...shadow.cta },
-  ctaText:    { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  ctaText:    { ...typography.button },
 
   exploreCard:  { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, marginHorizontal: 16, marginTop: 4, padding: 14, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   exploreIcon:  { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
-  exploreTitle: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.ink },
+  exploreTitle: { ...typography.cardTitle },
   exploreSub:   { fontFamily: fonts.regular, fontSize: 11.5, lineHeight: 16, color: colors.muted, marginTop: 2 },
   exploreBtn:   { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius.sm, borderWidth: 1, borderColor: BRAND },
   exploreBtnText: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 16, color: BRAND },

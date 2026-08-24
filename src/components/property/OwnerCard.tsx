@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '../Text'
-import { colors, fonts, radius, spacing } from '../../theme'
+import { colors, fonts, radius, spacing, typography } from '../../theme'
 import { memberSinceLabel, prettyEnum } from '../../lib/format'
 import type { OwnerInfo } from '../../types'
 
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   avatarFallback: { backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 28, color: colors.brand },
 
-  name: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 21, color: colors.ink },
+  name: { ...typography.cardTitle, lineHeight: 21 },
   role: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, color: colors.muted, marginTop: 1 },
 
   // A column, not a row: side by side the two signals wrap mid-phrase in ~130dp.

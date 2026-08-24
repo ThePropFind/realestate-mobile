@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Text, TextInput } from '../Text'
 import { appAlert } from '../AppAlert'
 import { bookingsApi } from '../../lib/api'
-import { colors, fonts, radius, shadow } from '../../theme'
+import { colors, fonts, radius, shadow, typography } from '../../theme'
 
 /**
  * Book a site visit.
@@ -150,12 +150,12 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1, borderColor: '#cbd5e1', borderRadius: radius.sm,
     paddingHorizontal: 12, paddingVertical: 11,
-    fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.ink, marginBottom: 10,
+    ...typography.input, fontFamily: fonts.regular, lineHeight: 19, marginBottom: 10,
   },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
   submit: {
     backgroundColor: colors.accent, paddingVertical: 14, borderRadius: radius.sm,
     alignItems: 'center', marginTop: 10, ...shadow.cta,
   },
-  submitText: { color: colors.white, fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 },
+  submitText: { ...typography.button },
 })

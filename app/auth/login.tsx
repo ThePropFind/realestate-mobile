@@ -17,7 +17,7 @@ import { appAlert } from '../../src/components/AppAlert'
 import { useAuthStore } from '../../src/store/authStore'
 import { FormField } from '../../src/components/FormField'
 import { PrimaryButton } from '../../src/components/PrimaryButton'
-import { colors, fonts, radius } from '../../src/theme'
+import { colors, fonts, radius, typography } from '../../src/theme'
 
 const schema = z.object({
   identifier: z.string().min(1, 'Email or mobile is required'),
@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
   iconCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   heading:    { fontFamily: fonts.extra, fontSize: 26, color: colors.ink },
   accentBar:  { width: 38, height: 4, borderRadius: 2, backgroundColor: colors.accent, marginTop: 10 },
-  sub:        { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, marginTop: 12, marginBottom: 24, lineHeight: 20 },
+  sub:        { ...typography.body, marginTop: 12, marginBottom: 24 },
   forgot:     { alignSelf: 'flex-end', marginBottom: 18, marginTop: 2 },
   footer:     { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
-  footerText: { fontFamily: fonts.regular, color: colors.muted, fontSize: 14 },
-  link:       { fontFamily: fonts.bold, color: colors.brand, fontSize: 14 },
+  footerText: { ...typography.body },
+  link:       { ...typography.body, fontFamily: fonts.bold, color: colors.brand },
 })

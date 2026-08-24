@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   bigCard:        { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white, ...shadow.card },
   bigCardOn:      { borderColor: BRAND, backgroundColor: '#eef2e8' },
   cardIcon:       { width: 44, height: 44, borderRadius: 22, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center' },
-  cardTitle:      { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  cardTitle:      { ...typography.cardTitle },
   cardSub:        { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
 
   row2:           { flexDirection: 'row', gap: 10 },
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
   amCatLabel:     { fontFamily: fonts.bold, fontSize: 11, color: colors.muted, letterSpacing: 0.5, marginBottom: 8 },
 
   uploadCard:     { borderWidth: 1, borderStyle: 'dashed', borderColor: '#cbd5e1', borderRadius: radius.md, paddingVertical: 28, alignItems: 'center', backgroundColor: colors.white, marginBottom: 14 },
-  uploadTitle:    { fontFamily: fonts.bold, fontSize: 14, color: colors.ink, marginTop: 8 },
+  uploadTitle:    { ...typography.cardTitle, marginTop: 8 },
   uploadSub:      { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
   grid:           { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   thumbWrap:      { width: '31%', aspectRatio: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.border, position: 'relative' },

@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   emptyTitle:   { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, marginTop: 2 },
   emptySub:     { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6, textAlign: 'center', lineHeight: 19 },
   cta:          { marginTop: 18, backgroundColor: ACCENT, paddingHorizontal: 24, paddingVertical: 12, borderRadius: radius.sm, ...shadow.cta },
-  ctaText:      { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  ctaText:      { ...typography.button },
 
   card:         { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   thumbWrap:    { width: 110, height: 110, backgroundColor: colors.border },
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   badgeRow:     { flexDirection: 'row', gap: 6, marginBottom: 4 },
   statusBadge:  { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill },
   statusText:   { fontFamily: fonts.bold, fontSize: 10 },
-  cardTitle:    { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
+  cardTitle:    { ...typography.cardTitle },
   cardSub:      { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 3 },
   cardFooter:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   price:        { fontFamily: fonts.extra, fontSize: 15, color: BRAND },

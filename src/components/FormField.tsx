@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { Text, TextInput } from './Text'
 import type { TextInputProps } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, fonts, radius } from '../theme'
+import { colors, fonts, radius, typography } from '../theme'
 
 interface Props extends TextInputProps {
   label: string
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   wrap:          { marginBottom: 14 },
   label:         { fontFamily: fonts.semibold, fontSize: 13, color: colors.ink, marginBottom: 7 },
   inputRow:      { position: 'relative', justifyContent: 'center' },
-  input:         { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 14, fontFamily: fonts.medium, fontSize: 15, color: colors.ink, backgroundColor: colors.white },
+  input:         { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 14, ...typography.input, backgroundColor: colors.white },
   inputWithIcon: { paddingRight: 44 },
   inputError:    { borderColor: colors.danger },
   eyeBtn:        { position: 'absolute', right: 10, padding: 4 },

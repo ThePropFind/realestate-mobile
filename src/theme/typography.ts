@@ -32,10 +32,20 @@ export const fonts = {
  *                 (Filters, Post, EMI, a pushed profile). Smaller BY ROLE, not
  *                 by accident: it labels a bar, it does not head a page.
  *
- * Body sizes on home run a point or so tighter than the platform default
- * (13 for inputs and row labels, 12.5 for button text) — `label` and `caption`
- * carry those, and a screen that wants "the home look" should use them rather
- * than 14/13.
+ * Body copy on home runs a point tighter than the platform default: 13 for
+ * descriptive text, row labels and inputs, 12 for meta. The rest of the app had
+ * settled on 14/15 for the same roles, which is what made every other screen
+ * read heavier than home. The body presets below carry home's values, and the
+ * 2026-08-24 sweep moved every screen onto them.
+ *
+ * Roles, so a new screen does not have to guess:
+ *   cardTitle — the title of a listing / row card
+ *   body      — descriptive copy, empty-state text, sheet blurbs
+ *   label     — a row label or a form label
+ *   button    — EVERY button's label. One size, deliberately: the app had 13,
+ *               14 and 15 competing on buttons that sit next to each other.
+ *   input     — the text inside a text field
+ *   caption   — meta, helper text, timestamps
  */
 export const typography = {
   /** Home's hero headline. The one oversized slot in the app — nothing else. */
@@ -46,7 +56,10 @@ export const typography = {
   screenTitle: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, color: colors.ink },
   navTitle:    { fontFamily: fonts.bold, fontSize: 18, lineHeight: 24, color: colors.ink },
   title:       { fontFamily: fonts.bold,     fontSize: 16, lineHeight: 21, color: colors.ink },
-  body:        { fontFamily: fonts.regular,  fontSize: 14, lineHeight: 20, color: colors.muted },
+  cardTitle:   { fontFamily: fonts.bold,     fontSize: 15, lineHeight: 20, color: colors.ink },
+  body:        { fontFamily: fonts.regular,  fontSize: 13, lineHeight: 19, color: colors.muted },
   label:       { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 17, color: colors.ink },
+  button:      { fontFamily: fonts.bold,     fontSize: 13, lineHeight: 18, color: colors.white },
+  input:       { fontFamily: fonts.medium,   fontSize: 13, color: colors.ink },
   caption:     { fontFamily: fonts.medium,   fontSize: 12, lineHeight: 16, color: colors.muted },
 } satisfies Record<string, TextStyle>

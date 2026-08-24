@@ -40,7 +40,9 @@ export function ReadMore({ text, lines = 5 }: { text: string; lines?: number }) 
 }
 
 const styles = StyleSheet.create({
-  body: { ...typography.body, fontSize: 14, lineHeight: 22 },
+  // A description runs long, so it keeps looser leading than typography.body —
+  // the SIZE now matches the rest of the app, the line height deliberately does not.
+  body: { ...typography.body, lineHeight: 20 },
   toggle: { marginTop: 8, alignSelf: 'flex-start' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   toggleText: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.brand },

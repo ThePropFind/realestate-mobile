@@ -13,7 +13,7 @@ import * as Location from 'expo-location'
 import { searchApi } from '../lib/api'
 import { DraggableSheet, SheetGrabZone } from './DraggableSheet'
 import { useLocationStore, DEFAULT_CITY, type SelectedCity } from '../store/locationStore'
-import { colors, fonts, radius } from '../theme'
+import { colors, fonts, radius, typography } from '../theme'
 import type { City } from '../types'
 
 const BRAND = colors.brand
@@ -145,16 +145,16 @@ const styles = StyleSheet.create({
   title:       { fontFamily: fonts.bold, fontSize: 18, color: colors.ink, marginTop: 6, marginBottom: 12 },
 
   detectRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.sm, borderWidth: 1, borderColor: '#d3ddc9', backgroundColor: colors.brandTint, marginBottom: 12 },
-  detectText:  { fontFamily: fonts.semibold, fontSize: 14, color: BRAND },
+  detectText:  { ...typography.button, color: BRAND },
 
   soonBox:     { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa', borderRadius: radius.sm, padding: 12, marginBottom: 12 },
-  soonTitle:   { fontFamily: fonts.bold, fontSize: 14, color: '#9a3412' },
+  soonTitle:   { ...typography.label, fontFamily: fonts.bold, color: '#9a3412' },
   soonBody:    { fontFamily: fonts.regular, fontSize: 12, color: '#9a3412', marginTop: 2, lineHeight: 17 },
 
   sectionLabel:{ fontFamily: fonts.semibold, fontSize: 12, color: colors.mutedLight, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, marginTop: 4 },
   cityRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, marginBottom: 8 },
   cityRowOn:   { backgroundColor: BRAND, borderColor: BRAND },
-  cityName:    { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  cityName:    { ...typography.label },
   cityState:   { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
 
   footerNote:  { textAlign: 'center', fontFamily: fonts.regular, fontSize: 12, color: colors.mutedLight, marginTop: 8 },

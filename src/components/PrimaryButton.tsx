@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
 import { Text } from './Text'
-import { colors, fonts, radius, shadow } from '../theme'
+import { colors, fonts, radius, shadow, typography } from '../theme'
 
 interface Props {
   label: string
@@ -30,5 +30,5 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = 'pr
 
 const styles = StyleSheet.create({
   btn:  { borderRadius: radius.sm, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#fff', fontFamily: fonts.bold, fontSize: 15, letterSpacing: 0.2 },
+  text: { ...typography.button, letterSpacing: 0.2 },
 })

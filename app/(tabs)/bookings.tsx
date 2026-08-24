@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   emptyTitle:  { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, marginTop: 2 },
   emptySub:    { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6, textAlign: 'center', lineHeight: 19 },
   cta:         { marginTop: 18, backgroundColor: ACCENT, paddingHorizontal: 24, paddingVertical: 12, borderRadius: radius.sm, ...shadow.cta },
-  ctaText:     { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  ctaText:     { ...typography.button },
 
   card:        { backgroundColor: colors.white, borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   cardTop:     { flexDirection: 'row' },
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   thumb:       { width: '100%', height: '100%' },
   thumbEmpty:  { alignItems: 'center', justifyContent: 'center' },
   titleRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardTitle:   { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
+  cardTitle:   { ...typography.cardTitle, flex: 1 },
   cardSub:     { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 3 },
   slotRow:     { flexDirection: 'row', alignItems: 'center', gap: 5 },
   slot:        { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },

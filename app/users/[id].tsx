@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   headerTitle: { ...typography.navTitle },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
-  errorText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
+  errorText: { ...typography.body, textAlign: 'center' },
 
   identity: { alignItems: 'center' },
   avatar: { width: 76, height: 76, borderRadius: radius.pill },

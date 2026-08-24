@@ -136,5 +136,5 @@ const styles = StyleSheet.create({
   hint:        { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
   coords:      { fontSize: 13, color: colors.ink, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }) },
   confirmBtn:  { marginTop: 6, backgroundColor: ACCENT, paddingVertical: 14, borderRadius: radius.sm, alignItems: 'center', ...shadow.cta },
-  confirmText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
+  confirmText: { ...typography.button },
 })

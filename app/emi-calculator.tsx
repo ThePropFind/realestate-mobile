@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
 
   card:          { backgroundColor: colors.white, marginHorizontal: 16, marginTop: 4, borderRadius: radius.lg, padding: 18, borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   rowBetween:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardTotalLabel:{ fontFamily: fonts.semibold, fontSize: 14, color: INK },
+  cardTotalLabel:{ ...typography.label, color: INK },
   cardTotalValue:{ fontFamily: fonts.extra, fontSize: 16, color: INK },
   divider:       { height: 1, backgroundColor: colors.borderLight, marginVertical: 14 },
   legendDot:     { width: 11, height: 11, borderRadius: 6 },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
 
   controls:      { paddingHorizontal: 16, paddingTop: 18 },
   control:       { marginBottom: 26 },
-  controlLabel:  { fontFamily: fonts.bold, fontSize: 15, color: INK },
+  controlLabel:  { ...typography.label, fontFamily: fonts.bold, color: INK },
   valueChip:     { backgroundColor: colors.white, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.border },
   valueChipText: { fontFamily: fonts.bold, fontSize: 14, color: INK },
 

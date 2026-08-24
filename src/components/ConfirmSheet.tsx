@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { Text } from './Text'
 import { Ionicons } from '@expo/vector-icons'
 import { DraggableSheet } from './DraggableSheet'
-import { colors, fonts, radius } from '../theme'
+import { colors, fonts, radius, typography } from '../theme'
 
 const BRAND = colors.brand
 const DANGER = colors.danger
@@ -62,11 +62,10 @@ const styles = StyleSheet.create({
   iconWrap:     { width: 56, height: 56, borderRadius: 28, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 6, marginBottom: 14 },
   title:        { fontFamily: fonts.extra, fontSize: 18, color: colors.ink, textAlign: 'center' },
   accentBar:    { width: 36, height: 3, borderRadius: 2, marginTop: 8, marginBottom: 10 },
-  body:         { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 21, marginBottom: 20, paddingHorizontal: 8 },
-
+  body:         { ...typography.body, textAlign: 'center', marginBottom: 20 },
   row:          { flexDirection: 'row', alignSelf: 'stretch', gap: 10, marginTop: 4 },
   cancelBtn:    { flex: 1, borderRadius: radius.sm, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: colors.white, paddingVertical: 13, alignItems: 'center' },
-  cancelBtnText:{ color: '#334155', fontFamily: fonts.bold, fontSize: 14 },
+  cancelBtnText:{ ...typography.button, color: '#334155' },
   confirmBtn:   { flex: 1, borderRadius: radius.sm, paddingVertical: 13, alignItems: 'center' },
-  confirmBtnText:{ color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  confirmBtnText:{ ...typography.button },
 })

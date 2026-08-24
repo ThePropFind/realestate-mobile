@@ -6,7 +6,7 @@ import { DraggableSheet, SheetGrabZone } from '../DraggableSheet'
 import { PrimaryButton } from '../PrimaryButton'
 import { appAlert } from '../AppAlert'
 import { propertyApi } from '../../lib/api'
-import { colors, fonts, radius, spacing } from '../../theme'
+import { colors, fonts, radius, spacing, typography } from '../../theme'
 import type { ReportReason } from '../../types'
 
 const REASONS: { value: ReportReason; label: string }[] = [
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
-    fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.ink,
+    ...typography.input, fontFamily: fonts.regular, lineHeight: 19,
     minHeight: 88, textAlignVertical: 'top',
   },
 })

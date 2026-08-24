@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InfoSheet, type InfoSheetContent } from '../../src/components/InfoSheet'
 import { ConfirmSheet } from '../../src/components/ConfirmSheet'
 import { useAuthStore } from '../../src/store/authStore'
-import { colors, fonts, radius, shadow } from '../../src/theme'
+import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -103,9 +103,9 @@ const styles = StyleSheet.create({
   title:          { fontFamily: fonts.bold, fontSize: 18, color: colors.ink, marginTop: 16, textAlign: 'center' },
   sub:            { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6, textAlign: 'center', marginBottom: 20, lineHeight: 19 },
   primaryBtn:     { backgroundColor: colors.brand, borderRadius: radius.sm, paddingHorizontal: 28, paddingVertical: 13, marginTop: 8, ...shadow.cta },
-  primaryBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
+  primaryBtnText: { ...typography.button },
   secondaryBtn:   { borderRadius: radius.sm, paddingHorizontal: 28, paddingVertical: 12, marginTop: 10 },
-  secondaryBtnText:{ color: colors.brand, fontFamily: fonts.semibold, fontSize: 14 },
+  secondaryBtnText:{ ...typography.button, color: colors.brand },
 
   header:         { alignItems: 'center', paddingBottom: 30, backgroundColor: colors.brand },
   avatar:         { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', marginBottom: 12, ...shadow.card },
@@ -118,5 +118,5 @@ const styles = StyleSheet.create({
   row:            { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, paddingHorizontal: 14, paddingVertical: 13, borderRadius: radius.md, marginBottom: 10, borderWidth: 1, borderColor: colors.borderLight, ...shadow.card },
   rowPressed:     { opacity: 0.7 },
   rowIcon:        { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center' },
-  rowLabel:       { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.ink, marginLeft: 12 },
+  rowLabel:       { ...typography.label, flex: 1, marginLeft: 12 },
 })

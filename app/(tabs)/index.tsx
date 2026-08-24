@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   recentImg:         { width: 108, height: 108, backgroundColor: colors.border },
   noImage:           { alignItems: 'center', justifyContent: 'center' },
   recentBody:        { flex: 1, padding: 14, justifyContent: 'space-between' },
-  recentTitle:       { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  recentTitle:       { ...typography.cardTitle },
   recentLoc:         { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   recentMetaRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   recentPrice:       { fontFamily: fonts.extra, fontSize: 16, color: colors.brand },

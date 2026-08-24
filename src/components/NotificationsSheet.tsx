@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router'
 import { DraggableSheet, SheetGrabZone } from './DraggableSheet'
 import { fetchNotices, type Notice } from '../lib/notifications'
 import { useAuthStore } from '../store/authStore'
-import { colors, fonts, radius } from '../theme'
+import { colors, fonts, radius, typography } from '../theme'
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
@@ -95,14 +95,14 @@ const styles = StyleSheet.create({
 
   row:        { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   rowIcon:    { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center' },
-  rowTitle:   { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
+  rowTitle:   { ...typography.label },
   rowBody:    { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 },
   rowTime:    { fontFamily: fonts.medium, fontSize: 11, color: colors.mutedLight, marginTop: 2 },
 
   emptyWrap:  { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12 },
   emptyIcon:  { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.brandTint, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  emptyTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  emptyTitle: { ...typography.cardTitle },
   emptyBody:  { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 4, lineHeight: 19 },
   signInBtn:  { backgroundColor: colors.brand, borderRadius: radius.sm, paddingHorizontal: 28, paddingVertical: 12, marginTop: 14 },
-  signInText: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  signInText: { ...typography.button },
 })

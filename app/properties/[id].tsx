@@ -29,7 +29,7 @@ import { StickyActionBar } from '../../src/components/property/StickyActionBar'
 import { favoritesApi, propertyApi } from '../../src/lib/api'
 import { formatPrice } from '../../src/lib/format'
 import { useAuthStore } from '../../src/store/authStore'
-import { colors, fonts, radius, spacing } from '../../src/theme'
+import { colors, fonts, radius, spacing, typography } from '../../src/theme'
 import type { PropertyCard, PropertyDetail } from '../../src/types'
 
 const WEB_URL =
@@ -346,12 +346,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
-  errorText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
+  errorText: { ...typography.body, textAlign: 'center' },
   backBtn: {
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
     borderRadius: radius.sm, backgroundColor: colors.brand,
   },
-  backBtnText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.white },
+  backBtnText: { ...typography.button },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   link: { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 16, color: colors.brand },
 })

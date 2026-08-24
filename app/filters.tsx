@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   headerBtn:    { width: 28, alignItems: 'flex-start' },
   headerTitle:  { ...typography.navTitle, color: '#fff' },
   headerSub:    { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16, color: 'rgba(255,255,255,0.8)' },
-  headerReset:  { fontFamily: fonts.bold, fontSize: 14, color: colors.accent },
+  headerReset:  { ...typography.button, color: colors.accent },
 
   body:   { padding: 16, paddingBottom: 28 },
 
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   rangeInput: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
     paddingHorizontal: 12, paddingVertical: 11,
-    fontFamily: fonts.medium, fontSize: 14, color: colors.ink, backgroundColor: colors.white,
+    ...typography.input, backgroundColor: colors.white,
   },
   rangeTo:    { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, paddingBottom: 13 },
 
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
 
   expandWrap:    { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   expandHead:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14 },
-  expandLabel:   { fontFamily: fonts.medium, fontSize: 14, color: colors.ink, flex: 1 },
+  expandLabel:   { ...typography.label, fontFamily: fonts.medium, flex: 1 },
   expandSummary: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, maxWidth: 130 },
   expandBody:    { paddingBottom: 6 },
 
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     ...shadow.raised,
   },
   resetBtn:     { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.brand },
-  resetBtnText: { fontFamily: fonts.bold, fontSize: 14, color: colors.brand },
+  resetBtnText: { ...typography.button, color: colors.brand },
   showBtn:      { flex: 2, alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.sm, backgroundColor: colors.accent },
-  showBtnText:  { fontFamily: fonts.bold, fontSize: 15, color: colors.brand },
+  showBtnText:  { ...typography.button, color: colors.brand },
 })
