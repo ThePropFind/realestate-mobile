@@ -43,6 +43,31 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
 }
 
 /**
+ * Featured-rail skeleton — the big photo card on home's "Featured Property".
+ *
+ * That rail used to fall back to real `FeaturedCollectionCard`s with no
+ * property, which painted an empty pale-sage photo box and nothing else: it
+ * read as a *loaded* card with a missing image rather than as loading. Shapes
+ * track what actually paints (photo, title, locality, price row, spec strip) so
+ * the hand-off to content does not jump.
+ */
+export function FeaturedCardSkeleton({ width, imageHeight = 210 }: { width: number; imageHeight?: number }) {
+  return (
+    <View style={[styles.featured, { width }]}>
+      <Skeleton style={[styles.featuredImg, { height: imageHeight }]} />
+      <View style={styles.featuredBody}>
+        <Skeleton style={{ width: '80%', height: 18 }} />
+        <Skeleton style={{ width: '55%', height: 13 }} />
+        <Skeleton style={{ width: '40%', height: 20 }} />
+        <View style={styles.featuredSpecs}>
+          {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} style={styles.featuredSpec} />)}
+        </View>
+      </View>
+    </View>
+  )
+}
+
+/**
  * Property-detail skeleton, matched to the redesigned above-the-fold layout:
  * 300px gallery, badge row, title, location, price, then the 5-cell spec strip
  * as a single row. The shapes track what actually paints so the hand-off from
@@ -74,7 +99,11 @@ export function DetailSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  block: { backgroundColor: colors.border, borderRadius: 4 },
+  // brandTint, not the old grey `colors.border`: a loading block is the same
+  // "nothing here yet" state as the pale sage no-image placeholder on the
+  // featured cards, and the two used to sit on screen together in two
+  // different greys. One colour for one meaning.
+  block: { backgroundColor: colors.brandTint, borderRadius: 4 },
   list:  { padding: 16 },
   card:  {
     flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.md,
@@ -82,6 +111,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden', ...shadow.card,
   },
   image: { width: 110, height: 120, borderRadius: 0 },
+  featured:     { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.white, ...shadow.card },
+  featuredImg:  { width: '100%', borderRadius: 0 },
+  featuredBody: { padding: 14, gap: 9 },
+  featuredSpecs:{ flexDirection: 'row', gap: 8, marginTop: 2 },
+  featuredSpec: { flex: 1, height: 38, borderRadius: radius.sm },
   body:  { flex: 1, padding: 12, gap: 8 },
   detailBody:  { padding: 16, gap: 10 },
   detailChips: { flexDirection: 'row', gap: 8, marginVertical: 4 },

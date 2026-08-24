@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { HeroCarousel, HERO_PHOTO_H } from '../../src/components/HeroCarousel'
-import { ListSkeleton } from '../../src/components/Skeleton'
+import { FeaturedCardSkeleton, ListSkeleton } from '../../src/components/Skeleton'
 import { CityPickerSheet } from '../../src/components/CityPickerSheet'
 import { NotificationsSheet } from '../../src/components/NotificationsSheet'
 import { PropertyMiniCard, MINI_CARD_WIDTH } from '../../src/components/property/PropertyMiniCard'
@@ -248,15 +248,23 @@ export default function HomeScreen() {
             decelerationRate="fast"
             contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, gap: 12, alignItems: 'flex-start' }}
           >
-            {(featuredCards.length ? featuredCards : [undefined, undefined, undefined]).slice(0, 6).map((p, i) => (
-              <FeaturedCollectionCard
-                key={p?.id ?? i}
-                property={p}
-                saved={p ? savedIds.has(p.id) : false}
-                onToggleSave={toggleSave}
-                onPress={() => p ? router.push(`/properties/${p.id}`) : goBrowse('SALE')}
-              />
-            ))}
+            {/* Skeletons while the rail is empty, NOT property-less cards. The
+                fallback used to be three real cards with no property, which
+                painted an empty pale-sage photo box and read as a loaded card
+                whose image had failed — not as loading. */}
+            {featuredCards.length === 0
+              ? Array.from({ length: 2 }, (_, i) => (
+                  <FeaturedCardSkeleton key={i} width={FEATURED_W} imageHeight={FEATURED_IMG_H} />
+                ))
+              : featuredCards.slice(0, 6).map((p) => (
+                  <FeaturedCollectionCard
+                    key={p.id}
+                    property={p}
+                    saved={savedIds.has(p.id)}
+                    onToggleSave={toggleSave}
+                    onPress={() => router.push(`/properties/${p.id}`)}
+                  />
+                ))}
           </ScrollView>
         </Section>
 
@@ -349,68 +357,71 @@ function Section({ title, subtitle, icon, background = colors.white, bleed = fal
   )
 }
 
-function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { property?: PropertyCard; saved: boolean; onToggleSave: (id: string) => void; onPress: () => void }) {
+// `property` is required: the rail renders FeaturedCardSkeleton while it is
+// empty, so this component no longer has a property-less state to draw.
+// `property` is required: the rail renders FeaturedCardSkeleton while it is
+// empty, so this component no longer has a property-less state to draw.
+function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { property: PropertyCard; saved: boolean; onToggleSave: (id: string) => void; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.featured, pressed && { opacity: 0.9 }]}>
-      {property?.primaryImageUrl ? (
+      {property.primaryImageUrl ? (
         <Image source={{ uri: property.primaryImageUrl }} style={styles.featuredImg} resizeMode="cover" />
       ) : (
         <View style={[styles.featuredImg, styles.noImage, { backgroundColor: colors.brandTint }]}>
           <Ionicons name="image-outline" size={36} color={colors.mutedLight} />
         </View>
       )}
-      {property ? (
-        <>
-          {/* Featured badge, top-left. Verification is a separate fact and is stated
-              once, by the pill below — never inferred from "not featured". */}
-          {property.isFeatured ? (
-            <View style={[styles.featuredBadge, styles.featuredBadgePremium]}>
-              <Ionicons name="star" size={12} color={colors.accent} />
-              <Text style={styles.featuredBadgeText}>Featured</Text>
-            </View>
-          ) : null}
-          {/* Heart, top-right — solid white circle per the Green Growth mock */}
-          <Pressable
-            onPress={() => onToggleSave(property.id)}
-            hitSlop={8}
-            style={({ pressed }) => [styles.featuredHeart, pressed && { opacity: 0.8 }]}
-          >
-            <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? colors.accent : colors.brand} />
-          </Pressable>
-          {/* Photo count, bottom-left of the photo */}
-          {property.imageCount > 1 ? (
-            <View style={styles.photoPill}>
-              <Ionicons name="images-outline" size={13} color="#fff" />
-              <Text style={styles.photoPillText}>{property.imageCount} Photos</Text>
-            </View>
-          ) : null}
 
-          {/* White info panel under the photo */}
-          <View style={styles.featuredInfo}>
-            <Text style={styles.featuredTitle} numberOfLines={1}>{property.title}</Text>
-            <View style={styles.featuredLocRow}>
-              <Ionicons name="location-outline" size={13} color={colors.muted} />
-              <Text style={styles.featuredLoc} numberOfLines={1}>{property.localityName}, {property.cityName}</Text>
-            </View>
-            <View style={styles.featuredMetaRow}>
-              <Text style={styles.featuredPrice}>{formatPrice(property.price, property.priceUnit)}</Text>
-              <View style={styles.featuredSpecs}>
-                {property.bedrooms ? <FeaturedSpec icon="bed-outline" label={`${property.bedrooms} BHK`} /> : null}
-                {property.bedrooms ? <View style={styles.featuredSpecDivider} /> : null}
-                <FeaturedSpec icon="scan-outline" label={`${property.areaSqft} sq.ft`} />
-                <View style={styles.featuredSpecDivider} />
-                <FeaturedSpec icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
-              </View>
-            </View>
-            {property.isVerified ? (
-              <View style={styles.verifiedPill}>
-                <Ionicons name="shield-checkmark-outline" size={13} color={colors.brand} />
-                <Text style={styles.verifiedPillText}>Verified Property</Text>
-              </View>
-            ) : null}
-          </View>
-        </>
+      {/* Featured badge, top-left. Verification is a separate fact and is stated
+          once, by the pill below — never inferred from "not featured". */}
+      {property.isFeatured ? (
+        <View style={[styles.featuredBadge, styles.featuredBadgePremium]}>
+          <Ionicons name="star" size={12} color={colors.accent} />
+          <Text style={styles.featuredBadgeText}>Featured</Text>
+        </View>
       ) : null}
+
+      {/* Heart, top-right — solid white circle per the Green Growth mock */}
+      <Pressable
+        onPress={() => onToggleSave(property.id)}
+        hitSlop={8}
+        style={({ pressed }) => [styles.featuredHeart, pressed && { opacity: 0.8 }]}
+      >
+        <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? colors.accent : colors.brand} />
+      </Pressable>
+
+      {/* Photo count, bottom-left of the photo */}
+      {property.imageCount > 1 ? (
+        <View style={styles.photoPill}>
+          <Ionicons name="images-outline" size={13} color="#fff" />
+          <Text style={styles.photoPillText}>{property.imageCount} Photos</Text>
+        </View>
+      ) : null}
+
+      {/* White info panel under the photo */}
+      <View style={styles.featuredInfo}>
+        <Text style={styles.featuredTitle} numberOfLines={1}>{property.title}</Text>
+        <View style={styles.featuredLocRow}>
+          <Ionicons name="location-outline" size={13} color={colors.muted} />
+          <Text style={styles.featuredLoc} numberOfLines={1}>{property.localityName}, {property.cityName}</Text>
+        </View>
+        <View style={styles.featuredMetaRow}>
+          <Text style={styles.featuredPrice}>{formatPrice(property.price, property.priceUnit)}</Text>
+          <View style={styles.featuredSpecs}>
+            {property.bedrooms ? <FeaturedSpec icon="bed-outline" label={`${property.bedrooms} BHK`} /> : null}
+            {property.bedrooms ? <View style={styles.featuredSpecDivider} /> : null}
+            <FeaturedSpec icon="scan-outline" label={`${property.areaSqft} sq.ft`} />
+            <View style={styles.featuredSpecDivider} />
+            <FeaturedSpec icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
+          </View>
+        </View>
+        {property.isVerified ? (
+          <View style={styles.verifiedPill}>
+            <Ionicons name="shield-checkmark-outline" size={13} color={colors.brand} />
+            <Text style={styles.verifiedPillText}>Verified Property</Text>
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   )
 }
