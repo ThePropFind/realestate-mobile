@@ -31,7 +31,7 @@
     "react-native-screens": "4.25.2",
     "react-native-svg": "15.15.4",
     "zod": "^4.4.3",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
