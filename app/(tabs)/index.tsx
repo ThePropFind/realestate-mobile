@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Dimensions, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, Dimensions, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Text, TextInput } from '../../src/components/Text'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { HeroCarousel } from '../../src/components/HeroCarousel'
+import { HeroCarousel, HERO_PHOTO_H } from '../../src/components/HeroCarousel'
 import { ListSkeleton } from '../../src/components/Skeleton'
 import { CityPickerSheet } from '../../src/components/CityPickerSheet'
 import { NotificationsSheet } from '../../src/components/NotificationsSheet'
@@ -16,6 +16,7 @@ import { formatPrice } from '../../src/lib/format'
 import { useNoticeCount } from '../../src/lib/notifications'
 import { useAuthStore } from '../../src/store/authStore'
 import { useLocationStore } from '../../src/store/locationStore'
+import { blendScrollY, useStatusBarBlend } from '../../src/lib/statusBarBlend'
 import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 import type { ListingType, PropertyCard } from '../../src/types'
 
@@ -28,6 +29,15 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn)
   const city = useLocationStore((s) => s.city)
+
+  // The hero photo runs edge-to-edge under the OS status bar, so the root
+  // layout's brand band stays transparent over it and fades back in as the hero
+  // scrolls away. `blendScrollY` is what drives that fade — native driver, so it
+  // tracks the finger exactly.
+  useStatusBarBlend(HERO_PHOTO_H)
+  const onScroll = useRef(
+    Animated.event([{ nativeEvent: { contentOffset: { y: blendScrollY } } }], { useNativeDriver: true }),
+  ).current
 
   const [propertyIdQuery, setPropertyIdQuery] = useState('')
   const [cityPickerOpen, setCityPickerOpen] = useState(false)
@@ -125,7 +135,12 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 44 }} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 44 }}
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         {/* Photo-led hero. The location/bell bar is absolute *inside* this
             wrapper rather than over the screen, so it scrolls away with the
             photo instead of pinning to the top. */}
@@ -133,21 +148,22 @@ export default function HomeScreen() {
           <HeroCarousel images={heroImages} />
           {/* ONE continuous scrim over the whole hero — not a top one plus a
               bottom one, which overlapped and banded unevenly.
-              Stop 0 is FULLY OPAQUE colors.brand so the hero continues the
-              status-bar band seamlessly whatever photo loads (a translucent
-              first stop tints with the image and can never match). It opens up
-              around 30-40% where the subject of a listing photo usually sits,
-              then closes back down so the headline, CTA and the search bar
-              below always have contrast. */}
+              Stop 0 is TRANSLUCENT, not the opaque brand it used to be: the
+              status-bar band above is transparent over the hero now, so the
+              photo is meant to read all the way up to the clock. 0.62 is the
+              floor that keeps white glyphs and the location pill legible over a
+              bright daylight listing photo. It opens up around 30-40% where the
+              subject of a listing photo usually sits, then closes back down so
+              the headline, CTA and the search bar below always have contrast. */}
           <LinearGradient
             colors={[
-              colors.brand,
-              'rgba(24,74,69,0.70)',
-              'rgba(24,74,69,0.42)',
+              'rgba(15,51,47,0.62)',
+              'rgba(24,74,69,0.50)',
+              'rgba(24,74,69,0.38)',
               'rgba(18,56,52,0.72)',
               'rgba(15,51,47,0.95)',
             ]}
-            locations={[0, 0.12, 0.34, 0.64, 1]}
+            locations={[0, 0.14, 0.36, 0.64, 1]}
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
@@ -277,7 +293,7 @@ export default function HomeScreen() {
             ))}
           </Section>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <CityPickerSheet visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} />
       <NotificationsSheet visible={notifOpen} onClose={() => setNotifOpen(false)} />

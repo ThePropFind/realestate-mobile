@@ -62,8 +62,9 @@ export function HeroCarousel({ images }: Props) {
 }
 
 const styles = StyleSheet.create({
-  // brand (not brandDark) so the split second before a photo decodes still
-  // matches the status-bar band above it.
+  // Fill for the split second before a photo decodes. brand (not brandDark) so
+  // it reads as the same forest family as the scrim the screen paints over it —
+  // the status-bar band is transparent here, so this is what shows up top.
   wrap:   { height: HERO_PHOTO_H, backgroundColor: colors.brand, overflow: 'hidden' },
   photo:  { width: SCREEN_W, height: HERO_PHOTO_H },
 })

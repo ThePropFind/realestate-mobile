@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Animated, StyleSheet } from 'react-native'
 import { Text } from '../src/components/Text'
 import { Stack, SplashScreen } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -16,6 +16,7 @@ import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { useAuthStore } from '../src/store/authStore'
 import { useReduceMotion } from '../src/lib/useReduceMotion'
+import { BLEND_FADE_PX, blendScrollY, useStatusBarBlendHeight } from '../src/lib/statusBarBlend'
 import { AppAlertHost } from '../src/components/AppAlert'
 import { colors, fonts } from '../src/theme'
 
@@ -53,10 +54,36 @@ if (sentryDsn) {
  * runs under the clock and battery icons and collides with them. Painting our
  * own band on top of everything keeps the app visually separate from the
  * system bar on every screen, present and future.
+ *
+ * One screen opts out while it is focused: home, whose photo hero is meant to
+ * run edge-to-edge under the clock (see `useStatusBarBlend`). There the band
+ * starts fully transparent and fades in over the last `BLEND_FADE_PX` of the
+ * hero, so it is solid brand at the exact moment the hero clears the top and
+ * ivory page content would otherwise slide under the glyphs. Every other
+ * screen leaves `blendHeight` null and gets the plain opaque band.
  */
 function StatusBarBackdrop() {
   const insets = useSafeAreaInsets()
-  return <View style={[styles.statusBarBackdrop, { height: insets.top }]} pointerEvents="none" />
+  const blendHeight = useStatusBarBlendHeight()
+
+  // The artwork stops covering the status bar once it has scrolled up by its
+  // own height minus the band — that offset is where the band must be solid.
+  const solidAt = blendHeight === null ? 0 : Math.max(blendHeight - insets.top, 1)
+  const opacity =
+    blendHeight === null
+      ? 1
+      : blendScrollY.interpolate({
+          inputRange: [Math.max(solidAt - BLEND_FADE_PX, 0), solidAt],
+          outputRange: [0, 1],
+          extrapolate: 'clamp',
+        })
+
+  return (
+    <Animated.View
+      style={[styles.statusBarBackdrop, { height: insets.top, opacity }]}
+      pointerEvents="none"
+    />
+  )
 }
 
 function RootLayout() {
@@ -81,7 +108,8 @@ function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      {/* Light glyphs — the backdrop below is always dark. */}
+      {/* Light glyphs throughout — the band below is dark, and where it fades
+          out (home's hero) the artwork under it is a dark forest scrim. */}
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -136,9 +164,8 @@ const styles = StyleSheet.create({
     // which reads as a seam between this band and the header under it.
     zIndex: 100,
     // colors.brand, not brandDark: every self-padding header (saved, profile,
-    // bookings) paints its own status-bar area in colors.brand, and the home
-    // hero's top scrim now starts opaque on the same value — so the band meets
-    // whatever is under it with no seam.
+    // bookings) paints its own status-bar area in colors.brand, so the band
+    // meets whatever is under it with no seam.
     backgroundColor: colors.brand,
   },
 })
