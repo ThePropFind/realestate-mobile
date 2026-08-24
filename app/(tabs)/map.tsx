@@ -25,6 +25,9 @@ const BRAND = colors.brand
 // Anything past it does not exist as far as this screen is concerned, which is
 // why the result count below is shown rather than hidden — see `capped`.
 const PAGE_SIZE = 100
+// Distance from insets.bottom to the foot of the bottom stack. Tuned against
+// the tab bar (66 + insets.bottom) and the quick-filter strip's shadow gutter.
+const BOTTOM_STACK_GAP = 62
 
 // Coimbatore city center — the fallback viewport before any bounds search.
 const COIMBATORE: Region = {
@@ -477,16 +480,35 @@ export default function MapScreen() {
           style={[styles.controls, { bottom: bottomStackH + 14 }]}
           pointerEvents="box-none"
         >
-          {canSearchArea ? (
-            <Pressable
-              onPress={searchThisArea}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.control, pressed && { opacity: 0.85 }]}
-            >
-              <Ionicons name="search" size={19} color={BRAND} />
-              <Text style={styles.controlText}>Search{'\n'}this area</Text>
-            </Pressable>
-          ) : null}
+          {/* ALWAYS rendered. It used to mount only once `canSearchArea` went
+              true, which made it unpredictable — the threshold that flips that
+              flag (a quarter-screen pan, or half a zoom octave) is invisible to
+              the user, so the control appeared and vanished for no reason they
+              could see, and the stack under it jumped height each time.
+              It is now permanent, and `canSearchArea` only changes how loudly
+              it asks: brand-filled when the viewport really has moved past what
+              the pins were fetched for, plain white otherwise. Tapping it while
+              plain re-runs the query for the current viewport — a refresh,
+              which is a reasonable thing to want and never a dead tap. */}
+          <Pressable
+            onPress={searchThisArea}
+            accessibilityRole="button"
+            accessibilityLabel={
+              canSearchArea
+                ? 'Search this area — the map has moved since these results'
+                : 'Search this area again'
+            }
+            style={({ pressed }) => [
+              styles.control,
+              canSearchArea && styles.controlOn,
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Ionicons name="search" size={19} color={canSearchArea ? '#fff' : BRAND} />
+            <Text style={[styles.controlText, canSearchArea && styles.controlTextOn]}>
+              Search{'\n'}this area
+            </Text>
+          </Pressable>
           <Pressable
             onPress={goToMyLocation}
             accessibilityRole="button"
@@ -522,11 +544,15 @@ export default function MapScreen() {
         {/* ── Bottom stack: card carousel over the quick-filter strip ──
             Positioned off insets.bottom, not a bare 84: the tab bar is
             66 + insets.bottom and the Post FAB sits above it, so on
-            gesture-nav Android a fixed offset hides behind both. */}
+            gesture-nav Android a fixed offset hides behind both.
+            62, not the old 74: the quick-filter strip grew a 16pt shadow
+            gutter at its foot, so the buttons land within 2pt of where they
+            always were and only the (transparent) gutter tucks behind the
+            tab bar, where the tail of the shadow is invisible anyway. */}
         <View
-          style={[styles.bottomStack, { bottom: insets.bottom + 74 }]}
+          style={[styles.bottomStack, { bottom: insets.bottom + BOTTOM_STACK_GAP }]}
           pointerEvents="box-none"
-          onLayout={(e) => setBottomStackH(e.nativeEvent.layout.height + insets.bottom + 74)}
+          onLayout={(e) => setBottomStackH(e.nativeEvent.layout.height + insets.bottom + BOTTOM_STACK_GAP)}
         >
           {!loading && items.length > 0 ? (
             <MapPropertyCarousel
@@ -571,7 +597,10 @@ const styles = StyleSheet.create({
     width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent,
   },
 
-  chipsRow: { paddingHorizontal: 12, paddingTop: 10, gap: 8 },
+  // paddingBottom is a shadow gutter, same as MapQuickFilters' row: this
+  // ScrollView clips to its content box, and without it `shadow.card` was
+  // sliced off flat under every chip.
+  chipsRow: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12, gap: 8 },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, height: 38, borderRadius: radius.pill, backgroundColor: colors.white,
@@ -582,7 +611,9 @@ const styles = StyleSheet.create({
   chipTextOn: { fontFamily: fonts.bold, color: '#fff' },
 
   cappedPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'center', marginTop: 10,
+    // marginTop 0: the chip row now carries its own 12pt shadow gutter, and
+    // stacking the old 10 on top of it pushed this pill visibly off the chips.
+    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'center',
     backgroundColor: colors.white, paddingHorizontal: 11, paddingVertical: 6, borderRadius: radius.pill,
     ...shadow.card,
   },
@@ -594,7 +625,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', gap: 3,
     ...shadow.raised,
   },
+  controlOn:   { backgroundColor: BRAND },
   controlText: { fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 12, color: colors.ink, textAlign: 'center' },
+  controlTextOn: { fontFamily: fonts.bold, color: '#fff' },
 
   loadingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(248,250,252,0.6)' },
   emptyOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },

@@ -110,7 +110,13 @@ function budgetLabel(f: SearchFilters): string | null {
 
 const styles = StyleSheet.create({
   // Inset 24 to line the first button up with the carousel's first card.
-  row: { paddingHorizontal: 24, gap: 8, paddingVertical: 2 },
+  // The vertical padding is a SHADOW GUTTER, not spacing: a horizontal
+  // ScrollView sizes its content box to the pill height and clips to it, so at
+  // paddingVertical: 2 the `shadow.raised` drop (offset 4 + radius 12) was
+  // sliced flat across each button's bottom edge — it read as the button being
+  // cut off. 16 below / 6 above clears it. The parent compensates its `bottom`
+  // so the strip still sits where it did.
+  row: { paddingHorizontal: 24, gap: 8, paddingTop: 6, paddingBottom: 16 },
   // Squared rectangle, not a pill — 8pt, matching the design's buttons. No
   // flexShrink: labels stay whole and the row scrolls instead.
   pill: {
