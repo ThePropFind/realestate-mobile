@@ -11,15 +11,24 @@ import { colors, fonts, radius, shadow, spacing } from '../../theme'
  * booking sheet keep a single owner.
  */
 export function StickyActionBar({
-  bottomInset, onCall, onWhatsApp, onBookVisit,
+  bottomInset, onCall, onWhatsApp, onBookVisit, onHeight,
 }: {
   bottomInset: number
   onCall: () => void
   onWhatsApp: () => void
   onBookVisit: () => void
+  /**
+   * Reports the bar's real laid-out height so the screen behind it can pad its
+   * scroll by exactly that. The bar's height depends on the device's bottom
+   * inset, so a constant guessed for one phone leaves dead space on another.
+   */
+  onHeight?: (h: number) => void
 }) {
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(bottomInset, spacing.md) }]}>
+    <View
+      style={[styles.bar, { paddingBottom: Math.max(bottomInset, spacing.md) }]}
+      onLayout={(e) => onHeight?.(e.nativeEvent.layout.height)}
+    >
       <Pressable onPress={onCall} style={({ pressed }) => [styles.btn, styles.outline, pressed && styles.pressed]}>
         <Ionicons name="call" size={16} color={colors.brand} />
         <Text style={[styles.label, { color: colors.brand }]}>Call</Text>

@@ -63,6 +63,11 @@ export default function PropertyDetailScreen() {
   const [likeBusy, setLikeBusy]   = useState(false)
   const [visitOpen, setVisitOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  // Measured, not guessed: the sticky bar's height is 12 + a 44pt button +
+  // max(insets.bottom, 12), so the old constant 96 overshot by ~40pt on a
+  // gesture-nav phone and left a visible dead band under the last card.
+  // Seeded with the same formula so the very first frame is already close.
+  const [barH, setBarH] = useState(56 + insets.bottom)
   const [signInPromptOpen, setSignInPromptOpen] = useState(false)
 
   useEffect(() => {
@@ -187,7 +192,7 @@ export default function PropertyDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: barH + spacing.lg }}>
         {/* ① Gallery */}
         <Gallery images={listing.images ?? []} />
 
@@ -291,6 +296,7 @@ export default function PropertyDetailScreen() {
 
       <StickyActionBar
         bottomInset={insets.bottom}
+        onHeight={setBarH}
         onCall={callOwner}
         onWhatsApp={whatsappOwner}
         onBookVisit={() => setVisitOpen(true)}
