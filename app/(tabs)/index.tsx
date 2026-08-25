@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Dimensions, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Animated, Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { Text, TextInput } from '../../src/components/Text'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -53,33 +53,41 @@ export default function HomeScreen() {
   const [featured, setFeatured] = useState<PropertyCard[]>([])
   const [heroImages, setHeroImages] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Newest in the selected city — feeds both the Recommended rail and the
   // Recent list, so fetch enough for the rail (8) plus the list (6).
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await propertyApi.search({ citySlug: city.slug, page: 0, size: 10 })
-        setRecent(data.content)
-        // Seed the hero from recent photos immediately so it never starts empty.
-        setHeroImages((prev) => prev.length ? prev : photosOf(data.content))
-      } catch { /* swallow — home still renders */ }
-      finally { setLoading(false) }
-    })()
+  const loadCity = useCallback(async () => {
+    try {
+      const { data } = await propertyApi.search({ citySlug: city.slug, page: 0, size: 10 })
+      setRecent(data.content)
+      // Seed the hero from recent photos immediately so it never starts empty.
+      setHeroImages((prev) => prev.length ? prev : photosOf(data.content))
+    } catch { /* swallow — home still renders */ }
+    finally { setLoading(false) }
   }, [city.slug])
 
   // Genuinely featured listings — drive the Featured carousel *and* the hero
   // photos. Falls back to the city results below if nothing is flagged.
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await propertyApi.getFeatured()
-        setFeatured(data)
-        const photos = photosOf(data)
-        if (photos.length) setHeroImages(photos)
-      } catch { /* hero falls back to recent/gradient */ }
-    })()
+  const loadFeatured = useCallback(async () => {
+    try {
+      const { data } = await propertyApi.getFeatured()
+      setFeatured(data)
+      const photos = photosOf(data)
+      if (photos.length) setHeroImages(photos)
+    } catch { /* hero falls back to recent/gradient */ }
   }, [])
+
+  useEffect(() => { void loadCity() }, [loadCity])
+  useEffect(() => { void loadFeatured() }, [loadFeatured])
+
+  // Pull-to-refresh — the rest of the app has it, and without it Android's
+  // overscroll stretch is the only thing a downward drag on home produces.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try { await Promise.all([loadCity(), loadFeatured()]) }
+    finally { setRefreshing(false) }
+  }, [loadCity, loadFeatured])
 
   const featuredCards = featured.length ? featured : recent
 
@@ -148,6 +156,21 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        // Kills Android's rubber-band stretch on the hero photo; the pull-down
+        // gesture is still handled by the SwipeRefreshLayout wrapper above it.
+        overScrollMode="never"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            // The spinner lands on the dark hero photo, so it runs white on
+            // brand rather than the brand-on-white used elsewhere.
+            tintColor="#fff"
+            colors={['#fff']}
+            progressBackgroundColor={colors.brand}
+            progressViewOffset={insets.top}
+          />
+        }
       >
         {/* Photo-led hero. The location/bell bar is absolute *inside* this
             wrapper rather than over the screen, so it scrolls away with the
@@ -252,6 +275,7 @@ export default function HomeScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            overScrollMode="never"
             snapToInterval={FEATURED_W + 12}
             decelerationRate="fast"
             contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, gap: 12, alignItems: 'flex-start' }}
@@ -282,6 +306,7 @@ export default function HomeScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              overScrollMode="never"
               snapToInterval={MINI_CARD_WIDTH + 12}
               decelerationRate="fast"
               contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, gap: 12, alignItems: 'flex-start' }}
