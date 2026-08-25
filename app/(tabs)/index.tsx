@@ -10,6 +10,7 @@ import { FeaturedCardSkeleton, ListSkeleton } from '../../src/components/Skeleto
 import { CityPickerSheet } from '../../src/components/CityPickerSheet'
 import { NotificationsSheet } from '../../src/components/NotificationsSheet'
 import { PropertyMiniCard, MINI_CARD_WIDTH } from '../../src/components/property/PropertyMiniCard'
+import { CardChip, CardLocation, CardPrice, CardSpecs, CardTitle, CARD_SCALE, listingSpecs } from '../../src/components/property/CardAtoms'
 import { propertyApi, favoritesApi } from '../../src/lib/api'
 import { appAlert } from '../../src/components/AppAlert'
 import { formatPrice } from '../../src/lib/format'
@@ -23,6 +24,13 @@ import type { ListingType, PropertyCard } from '../../src/types'
 // One large featured card per carousel page — full content width.
 const FEATURED_W = Dimensions.get('window').width - 32
 const FEATURED_IMG_H = 210
+
+// Home draws three different listing cards; all three speak the one card
+// vocabulary in src/components/property/CardAtoms.tsx. The hero card is the only
+// place in the app that gets the `lg` step; the recent row runs at `md`, the same
+// size as the Search / Saved / profile card, and the rail card at `sm`.
+const HERO_SIZE = 'lg' as const
+const ROW_SIZE  = 'md' as const
 
 export default function HomeScreen() {
   const router = useRouter()
@@ -398,40 +406,27 @@ function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { pr
         </View>
       ) : null}
 
-      {/* White info panel under the photo */}
+      {/* White info panel under the photo. Same order as every other listing
+          card — title, location, price, specs, chips — one step larger, and the
+          property type moved out of the spec strip into a chip where the rest of
+          the app keeps it. */}
       <View style={styles.featuredInfo}>
-        <Text style={styles.featuredTitle} numberOfLines={1}>{property.title}</Text>
-        <View style={styles.featuredLocRow}>
-          <Ionicons name="location-outline" size={13} color={colors.muted} />
-          <Text style={styles.featuredLoc} numberOfLines={1}>{property.localityName}, {property.cityName}</Text>
-        </View>
+        <CardTitle size={HERO_SIZE}>{property.title}</CardTitle>
+        <CardLocation size={HERO_SIZE} item={property} />
         <View style={styles.featuredMetaRow}>
-          <Text style={styles.featuredPrice}>{formatPrice(property.price, property.priceUnit)}</Text>
-          <View style={styles.featuredSpecs}>
-            {property.bedrooms ? <FeaturedSpec icon="bed-outline" label={`${property.bedrooms} BHK`} /> : null}
-            {property.bedrooms ? <View style={styles.featuredSpecDivider} /> : null}
-            <FeaturedSpec icon="scan-outline" label={`${property.areaSqft} sq.ft`} />
-            <View style={styles.featuredSpecDivider} />
-            <FeaturedSpec icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
-          </View>
+          <CardPrice size={HERO_SIZE}>{formatPrice(property.price, property.priceUnit)}</CardPrice>
+          {/* Beds + area only: the third cell used to be the property type, which
+              is now a chip, and a baths cell would crowd the price. */}
+          <CardSpecs size={HERO_SIZE} specs={listingSpecs(property, { baths: false })} style={styles.featuredSpecs} />
         </View>
-        {property.isVerified ? (
-          <View style={styles.verifiedPill}>
-            <Ionicons name="shield-checkmark-outline" size={13} color={colors.brand} />
-            <Text style={styles.verifiedPillText}>Verified Property</Text>
-          </View>
-        ) : null}
+        <View style={styles.chipRow}>
+          {property.isVerified ? (
+            <CardChip size={HERO_SIZE} icon="shield-checkmark-outline" label="Verified" />
+          ) : null}
+          <CardChip size={HERO_SIZE} icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
+        </View>
       </View>
     </Pressable>
-  )
-}
-
-function FeaturedSpec({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }) {
-  return (
-    <View style={styles.featuredSpec}>
-      <Ionicons name={icon} size={16} color={colors.brand} />
-      <Text style={styles.featuredSpecLabel}>{label}</Text>
-    </View>
   )
 }
 
@@ -444,12 +439,17 @@ function RecentRow({ item, onPress }: { item: PropertyCard; onPress: () => void 
         <View style={[styles.recentImg, styles.noImage]}><Ionicons name="image-outline" size={24} color={colors.mutedLight} /></View>
       )}
       <View style={styles.recentBody}>
-        <Text style={styles.recentTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.recentLoc} numberOfLines={1}>{item.localityName}, {item.cityName}</Text>
-        <View style={styles.recentMetaRow}>
-          <Text style={styles.recentPrice}>{formatPrice(item.price, item.priceUnit)}</Text>
-          <Text style={styles.recentMeta}>{item.areaSqft} sqft</Text>
+        <CardTitle size={ROW_SIZE}>{item.title}</CardTitle>
+        <CardLocation size={ROW_SIZE} item={item} />
+        {/* The price row carries the Verified chip on its right — the slack the
+            old right-aligned "1200 sqft" left sitting empty. */}
+        <View style={styles.recentPriceRow}>
+          <CardPrice size={ROW_SIZE}>{formatPrice(item.price, item.priceUnit)}</CardPrice>
+          {item.isVerified ? (
+            <CardChip size={ROW_SIZE} icon="shield-checkmark-outline" label="Verified" />
+          ) : null}
         </View>
+        <CardSpecs size={ROW_SIZE} specs={listingSpecs(item)} />
       </View>
     </Pressable>
   )
@@ -506,35 +506,28 @@ const styles = StyleSheet.create({
   // Featured — one large card per page: photo on top, white info panel below
   featured:          { width: FEATURED_W, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.white, ...shadow.card },
   featuredImg:       { width: '100%', height: FEATURED_IMG_H },
-  featuredBadge:        { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.brand, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.sm },
+  featuredBadge:        { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.brand, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.sm },
   featuredBadgePremium: { backgroundColor: colors.brand },
-  featuredBadgeText:    { fontFamily: fonts.semibold, fontSize: 12, color: '#fff', lineHeight: 15 },
+  featuredBadgeText:    { fontFamily: fonts.semibold, fontSize: 11, color: '#fff', lineHeight: 15 },
   featuredHeart:        { position: 'absolute', top: 12, right: 12, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, ...shadow.card },
   // Sits just inside the photo's bottom-left corner (the card, not the photo,
   // is the positioning parent — hence the offset off the photo height).
   photoPill:         { position: 'absolute', top: FEATURED_IMG_H - 39, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(15,51,47,0.72)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.sm },
   photoPillText:     { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 15, color: '#fff' },
-  featuredInfo:      { padding: 16, gap: 6 },
-  featuredPrice:     { fontFamily: fonts.extra, fontSize: 18, color: colors.brand, flexShrink: 1 },
-  featuredTitle:     { fontFamily: fonts.extra, fontSize: 18, color: colors.ink },
-  featuredLocRow:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  featuredLoc:       { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, flexShrink: 1 },
-  featuredMetaRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 6 },
-  featuredSpecs:     { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  featuredSpec:      { alignItems: 'center', gap: 3 },
-  featuredSpecLabel: { fontFamily: fonts.medium, fontSize: 10, color: colors.muted },
-  featuredSpecDivider:{ width: 1, height: 26, backgroundColor: colors.borderLight },
-  verifiedPill:      { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: colors.brandTint, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.sm, marginTop: 6 },
-  verifiedPillText:  { fontFamily: fonts.semibold, fontSize: 12, color: colors.brand },
+  featuredInfo:      { padding: 14, gap: CARD_SCALE.lg.gap },
+  featuredMetaRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 2 },
+  // The specs give way before the price does — a truncated "1650 sq.f…" costs
+  // less than a truncated price.
+  featuredSpecs:     { flexShrink: 1 },
+  chipRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
 
   // Recent listings
-  recent:            { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.md, marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, overflow: 'hidden', ...shadow.card },
-  recentImg:         { width: 108, height: 108, backgroundColor: colors.border },
+  // Photo stretches to whatever the body needs instead of being a fixed 108
+  // square — the body grew a spec strip, and a square left a notch of dead white
+  // under the photo.
+  recent:            { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.lg, marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, overflow: 'hidden', ...shadow.card },
+  recentImg:         { width: 112, alignSelf: 'stretch', minHeight: 112, backgroundColor: colors.border },
   noImage:           { alignItems: 'center', justifyContent: 'center' },
-  recentBody:        { flex: 1, padding: 14, justifyContent: 'space-between' },
-  recentTitle:       { ...typography.cardTitle },
-  recentLoc:         { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
-  recentMetaRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  recentPrice:       { fontFamily: fonts.extra, fontSize: 16, color: colors.brand },
-  recentMeta:        { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  recentBody:        { flex: 1, paddingVertical: 12, paddingHorizontal: 12, justifyContent: 'center', gap: CARD_SCALE.md.gap },
+  recentPriceRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 1 },
 })

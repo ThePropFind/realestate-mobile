@@ -1,17 +1,25 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Text } from '../Text'
-import { colors, fonts, radius, shadow, spacing } from '../../theme'
+import { CardChip, CardLocation, CardPrice, CardSpecs, CardTitle, CARD_SCALE, listingSpecs } from './CardAtoms'
+import { colors, radius, shadow, spacing } from '../../theme'
 import { formatPrice } from '../../lib/format'
 import type { PropertyCard } from '../../types'
 
 export const MINI_CARD_WIDTH = 190
 
+const SIZE = 'sm' as const
+
 /**
- * Compact listing card.
+ * Compact listing card — the home "Recommended For You" rail and the detail
+ * screen's "Similar Properties" rail.
  *
- * `width` defaults to the rail's fixed card width; the owner profile passes a
- * computed half-screen value so two fit per row on a narrow phone.
+ * Reads top-to-bottom in the app's fixed card order (title → location → price →
+ * specs), same as every other listing card. It used to lead with the price and
+ * print the locality as bare text with no pin, which made the same listing look
+ * like a different product depending on which rail you found it in.
+ *
+ * `width` defaults to the rail's fixed card width; callers can pass a computed
+ * value where two must fit per row on a narrow phone.
  */
 export function PropertyMiniCard({
   item, onPress, width = MINI_CARD_WIDTH, saved = false, onToggleSave,
@@ -21,13 +29,12 @@ export function PropertyMiniCard({
   width?: number
   /** Heart state — only read when `onToggleSave` is supplied. */
   saved?: boolean
-  /** Omit to render the card without a heart (the similar rail and owner grid do). */
+  /** Omit to render the card without a heart (the similar rail does). */
   onToggleSave?: (id: string) => void
 }) {
-  const specs = [
-    item.bedrooms != null ? `${item.bedrooms} BHK` : null,
-    item.areaSqft ? `${item.areaSqft} sq.ft` : null,
-  ].filter(Boolean).join(' · ')
+  // No bathroom count at this width — beds and area are what a rail card is
+  // scanned for, and a third cell pushes the strip into an ellipsis.
+  const specs = listingSpecs(item, { baths: false })
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, { width }, pressed && { opacity: 0.9 }]}>
@@ -51,11 +58,19 @@ export function PropertyMiniCard({
           />
         </Pressable>
       ) : null}
+
       <View style={styles.body}>
-        <Text style={styles.price}>{formatPrice(item.price, item.priceUnit)}</Text>
-        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.meta} numberOfLines={1}>{item.localityName}</Text>
-        {specs ? <Text style={styles.meta} numberOfLines={1}>{specs}</Text> : null}
+        <CardTitle size={SIZE}>{item.title}</CardTitle>
+        <CardLocation size={SIZE} item={item} showCity={false} />
+        <CardPrice size={SIZE}>{formatPrice(item.price, item.priceUnit)}</CardPrice>
+        <CardSpecs size={SIZE} specs={specs} />
+        {/* Verification is the one badge worth the extra row here — the property
+            type is already doing its work in the title. */}
+        {item.isVerified ? (
+          <View style={styles.chipRow}>
+            <CardChip size={SIZE} icon="shield-checkmark-outline" label="Verified" />
+          </View>
+        ) : null}
       </View>
     </Pressable>
   )
@@ -78,8 +93,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     ...shadow.card,
   },
-  body:    { padding: spacing.md, gap: 2 },
-  price:   { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.brand },
-  title:   { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 17, color: colors.ink },
-  meta:    { fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.muted },
+  body:    { padding: spacing.md, gap: CARD_SCALE.sm.gap },
+  chipRow: { flexDirection: 'row', marginTop: 1 },
 })
