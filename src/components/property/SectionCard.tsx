@@ -19,9 +19,7 @@ export function SectionCard({
   /**
    * Full-bleed: no side margin, radius, border or shadow — the section becomes a
    * band in one continuous white sheet instead of a card floating on the ivory bg.
-   * The property detail screen uses this; `app/users/[id].tsx` does NOT, because it
-   * derives its grid width from the default card's margin + padding (see CARD_WIDTH
-   * there). Changing the defaults instead of adding this variant would break it.
+   * The property detail screen uses this.
    */
   flush?: boolean
 }) {

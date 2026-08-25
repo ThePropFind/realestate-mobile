@@ -11,26 +11,11 @@ import { favoritesApi } from '../../src/lib/api'
 import { COMPARE_MAX, COMPARE_MIN, useCompareStore } from '../../src/lib/compareStore'
 import { useAuthStore } from '../../src/store/authStore'
 import { colors, fonts, radius, shadow, typography } from '../../src/theme'
-import type { PropertyCard, PropertyType } from '../../src/types'
+import { PROPERTY_FACETS as FACETS, facetCounts } from '../../src/lib/propertyFacets'
+import type { PropertyCard } from '../../src/types'
 
 const BRAND  = colors.brand
 const ACCENT = colors.accent
-
-const COMMERCIAL: PropertyType[] = ['COMMERCIAL_OFFICE', 'COMMERCIAL_SHOP']
-
-/**
- * The filter chips. These are FACETS, not a partition — a saved plot listed for
- * sale counts under both "Buy" and "Plots", which is why the counts do not add
- * up to the "All" total and why each carries its own predicate rather than an
- * index into a list of mutually exclusive buckets.
- */
-const FACETS: { key: string; label: string; match: (p: PropertyCard) => boolean }[] = [
-  { key: 'all',        label: 'All',        match: () => true },
-  { key: 'buy',        label: 'Buy',        match: (p) => p.listingType === 'SALE' },
-  { key: 'rent',       label: 'Rent',       match: (p) => p.listingType === 'RENT' },
-  { key: 'plots',      label: 'Plots',      match: (p) => p.propertyType === 'PLOT' },
-  { key: 'commercial', label: 'Commercial', match: (p) => COMMERCIAL.includes(p.propertyType) },
-]
 
 export default function SavedScreen() {
   const router = useRouter()
@@ -76,10 +61,7 @@ export default function SavedScreen() {
 
   const onRefresh = () => { setRefreshing(true); load() }
 
-  const counts = useMemo(
-    () => Object.fromEntries(FACETS.map((f) => [f.key, items.filter(f.match).length])),
-    [items],
-  )
+  const counts = useMemo(() => facetCounts(items), [items])
 
   const visible = useMemo(() => {
     const f = FACETS.find((x) => x.key === facet) ?? FACETS[0]
