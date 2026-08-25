@@ -12,7 +12,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://realestate-backend-ye8a.onrender.com/api",
+      "apiUrl": "https://realestate-backend-production-e15d.up.railway.app/api",
       "router": {},
       "eas": {
         "projectId": "27935c82-3493-4366-8604-02a9f48c4e05"
