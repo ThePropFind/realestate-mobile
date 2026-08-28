@@ -21,15 +21,22 @@ import { blendScrollY, useStatusBarBlend } from '../../src/lib/statusBarBlend'
 import { colors, fonts, radius, shadow, typography } from '../../src/theme'
 import type { ListingType, PropertyCard } from '../../src/types'
 
-// One large featured card per carousel page — full content width.
-const FEATURED_W = Dimensions.get('window').width - 32
-const FEATURED_IMG_H = 210
+// One featured card per carousel page, laid out photo-left / facts-right so the
+// whole section lands inside the first screen instead of pushing the fold. The
+// card stops short of the content width on purpose — the sliver of the next card
+// is what says "this scrolls".
+const FEATURED_W = Dimensions.get('window').width - 48
+const FEATURED_PAD = 10
+const FEATURED_IMG_H = 148
+const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2) * 0.46)
 
 // Home draws three different listing cards; all three speak the one card
-// vocabulary in src/components/property/CardAtoms.tsx. The hero card is the only
-// place in the app that gets the `lg` step; the recent row runs at `md`, the same
-// size as the Search / Saved / profile card, and the rail card at `sm`.
-const HERO_SIZE = 'lg' as const
+// vocabulary in src/components/property/CardAtoms.tsx. The featured card runs at
+// `md` — the same size as the recent row and the Search / Saved / profile card —
+// with the spec strip and chips a step down at `sm`, because it now has half a
+// card's width to say it in. The rail card stays at `sm`.
+const HERO_SIZE = 'md' as const
+const FEATURED_MINOR = 'sm' as const
 const ROW_SIZE  = 'md' as const
 
 export default function HomeScreen() {
@@ -54,6 +61,8 @@ export default function HomeScreen() {
   const [heroImages, setHeroImages] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  // Which featured card is centred — drives the dots under the rail.
+  const [featuredIndex, setFeaturedIndex] = useState(0)
 
   // Newest in the selected city — feeds both the Recommended rail and the
   // Recent list, so fetch enough for the rail (8) plus the list (6).
@@ -90,6 +99,7 @@ export default function HomeScreen() {
   }, [loadCity, loadFeatured])
 
   const featuredCards = featured.length ? featured : recent
+  const topFeatured = featuredCards.slice(0, 6)
 
   const goBrowse = (type: ListingType) => router.push({ pathname: '/search', params: { listingType: type } })
   const goSearch = () => {
@@ -271,24 +281,26 @@ export default function HomeScreen() {
         </View>
 
         {/* Featured Properties */}
-        <Section title="Featured Property" icon="star" bleed action={{ label: 'View All', onPress: () => router.push('/search') }}>
+        <Section compact title="Featured Property" icon="star" bleed action={{ label: 'View All', onPress: () => router.push('/search') }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             overScrollMode="never"
             snapToInterval={FEATURED_W + 12}
             decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, gap: 12, alignItems: 'flex-start' }}
+            onScroll={(e) => setFeaturedIndex(Math.round(e.nativeEvent.contentOffset.x / (FEATURED_W + 12)))}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 6, gap: 12, alignItems: 'flex-start' }}
           >
             {/* Skeletons while the rail is empty, NOT property-less cards. The
                 fallback used to be three real cards with no property, which
                 painted an empty pale-sage photo box and read as a loaded card
                 whose image had failed — not as loading. */}
-            {featuredCards.length === 0
+            {topFeatured.length === 0
               ? Array.from({ length: 2 }, (_, i) => (
-                  <FeaturedCardSkeleton key={i} width={FEATURED_W} imageHeight={FEATURED_IMG_H} />
+                  <FeaturedCardSkeleton key={i} width={FEATURED_W} imageHeight={FEATURED_IMG_H} imageWidth={FEATURED_IMG_W} />
                 ))
-              : featuredCards.slice(0, 6).map((p) => (
+              : topFeatured.map((p) => (
                   <FeaturedCollectionCard
                     key={p.id}
                     property={p}
@@ -298,6 +310,16 @@ export default function HomeScreen() {
                   />
                 ))}
           </ScrollView>
+
+          {/* Page dots — the card stack is short enough now that the rail needs
+              to say how many there are. */}
+          {topFeatured.length > 1 ? (
+            <View style={styles.dots}>
+              {topFeatured.map((p, i) => (
+                <View key={p.id} style={[styles.dot, i === featuredIndex && styles.dotActive]} />
+              ))}
+            </View>
+          ) : null}
         </Section>
 
         {/* Recommended For You — newest in the selected city */}
@@ -366,14 +388,16 @@ function QuickAction({ icon, label, onPress }: { icon: React.ComponentProps<type
   )
 }
 
-function Section({ title, subtitle, icon, background = colors.white, bleed = false, action, children }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof Ionicons>['name']; background?: string; bleed?: boolean; action?: { label: string; onPress: () => void }; children: React.ReactNode }) {
+// `compact` is the tighter header used by Featured: a smaller title and less
+// vertical air, so the section clears the fold on a 6"-class phone.
+function Section({ title, subtitle, icon, background = colors.white, bleed = false, compact = false, action, children }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof Ionicons>['name']; background?: string; bleed?: boolean; compact?: boolean; action?: { label: string; onPress: () => void }; children: React.ReactNode }) {
   const headerPad = bleed ? { paddingHorizontal: 16 } : null
   return (
-    <View style={[styles.section, bleed && { paddingHorizontal: 0 }, { backgroundColor: background }]}>
+    <View style={[styles.section, compact && styles.sectionCompact, bleed && { paddingHorizontal: 0 }, { backgroundColor: background }]}>
       <View style={[styles.sectionHeaderRow, headerPad]}>
         <View style={styles.sectionTitleRow}>
-          {icon ? <Ionicons name={icon} size={20} color={colors.accent} /> : null}
-          <Text style={styles.sectionTitle}>{title}</Text>
+          {icon ? <Ionicons name={icon} size={compact ? 17 : 20} color={colors.accent} /> : null}
+          <Text style={[styles.sectionTitle, compact && styles.sectionTitleCompact]}>{title}</Text>
         </View>
         {action ? (
           <Pressable onPress={action.onPress} hitSlop={8} style={({ pressed }) => [styles.sectionAction, pressed && { opacity: 0.7 }]}>
@@ -385,70 +409,69 @@ function Section({ title, subtitle, icon, background = colors.white, bleed = fal
       {/* Icon-led headers (Featured) carry the gold accent in the icon already. */}
       {icon ? null : <View style={[styles.sectionAccentBar, bleed && { marginLeft: 16 }]} />}
       {subtitle ? <Text style={[styles.sectionSub, headerPad]}>{subtitle}</Text> : null}
-      <View style={{ marginTop: 12 }}>{children}</View>
+      <View style={{ marginTop: compact ? 6 : 12 }}>{children}</View>
     </View>
   )
 }
 
 // `property` is required: the rail renders FeaturedCardSkeleton while it is
 // empty, so this component no longer has a property-less state to draw.
-// `property` is required: the rail renders FeaturedCardSkeleton while it is
-// empty, so this component no longer has a property-less state to draw.
 function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { property: PropertyCard; saved: boolean; onToggleSave: (id: string) => void; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.featured, pressed && { opacity: 0.9 }]}>
-      {property.primaryImageUrl ? (
-        <Image source={{ uri: property.primaryImageUrl }} style={styles.featuredImg} resizeMode="cover" />
-      ) : (
-        <View style={[styles.featuredImg, styles.noImage, { backgroundColor: colors.brandTint }]}>
-          <Ionicons name="image-outline" size={36} color={colors.mutedLight} />
-        </View>
-      )}
+      {/* Photo column. The badges hang off this View, not the card, so they stay
+          pinned to the photo's rounded corners. */}
+      <View style={styles.featuredPhoto}>
+        {property.primaryImageUrl ? (
+          <Image source={{ uri: property.primaryImageUrl }} style={styles.featuredImg} resizeMode="cover" />
+        ) : (
+          <View style={[styles.featuredImg, styles.noImage, { backgroundColor: colors.brandTint }]}>
+            <Ionicons name="image-outline" size={30} color={colors.mutedLight} />
+          </View>
+        )}
 
-      {/* Featured badge, top-left. Verification is a separate fact and is stated
-          once, by the pill below — never inferred from "not featured". */}
-      {property.isFeatured ? (
-        <View style={[styles.featuredBadge, styles.featuredBadgePremium]}>
-          <Ionicons name="star" size={12} color={colors.accent} />
-          <Text style={styles.featuredBadgeText}>Featured</Text>
-        </View>
-      ) : null}
+        {/* Featured badge, top-left. Verification is a separate fact and is stated
+            once, by the pill below — never inferred from "not featured". */}
+        {property.isFeatured ? (
+          <View style={[styles.featuredBadge, styles.featuredBadgePremium]}>
+            <Ionicons name="star" size={11} color={colors.accent} />
+            <Text style={styles.featuredBadgeText}>Featured</Text>
+          </View>
+        ) : null}
 
-      {/* Heart, top-right — solid white circle per the Green Growth mock */}
-      <Pressable
-        onPress={() => onToggleSave(property.id)}
-        hitSlop={8}
-        style={({ pressed }) => [styles.featuredHeart, pressed && { opacity: 0.8 }]}
-      >
-        <Ionicons name={saved ? 'heart' : 'heart-outline'} size={18} color={saved ? colors.accent : colors.brand} />
-      </Pressable>
+        {/* Heart, top-right — solid white circle per the Green Growth mock */}
+        <Pressable
+          onPress={() => onToggleSave(property.id)}
+          hitSlop={8}
+          style={({ pressed }) => [styles.featuredHeart, pressed && { opacity: 0.8 }]}
+        >
+          <Ionicons name={saved ? 'heart' : 'heart-outline'} size={16} color={saved ? colors.accent : colors.brand} />
+        </Pressable>
 
-      {/* Photo count, bottom-left of the photo */}
-      {property.imageCount > 1 ? (
-        <View style={styles.photoPill}>
-          <Ionicons name="images-outline" size={13} color="#fff" />
-          <Text style={styles.photoPillText}>{property.imageCount} Photos</Text>
-        </View>
-      ) : null}
+        {/* Photo count, bottom-left of the photo */}
+        {property.imageCount > 1 ? (
+          <View style={styles.photoPill}>
+            <Ionicons name="images-outline" size={11} color="#fff" />
+            <Text style={styles.photoPillText}>{property.imageCount}</Text>
+          </View>
+        ) : null}
+      </View>
 
-      {/* White info panel under the photo. Same order as every other listing
-          card — title, location, price, specs, chips — one step larger, and the
-          property type moved out of the spec strip into a chip where the rest of
-          the app keeps it. */}
+      {/* Facts column. Location leads here rather than the title — the column is
+          narrow, and it is the line that orients you fastest. Otherwise the order
+          is the app's usual one: title, price, specs, chips. */}
       <View style={styles.featuredInfo}>
+        <CardLocation size={FEATURED_MINOR} item={property} />
         <CardTitle size={HERO_SIZE}>{property.title}</CardTitle>
-        <CardLocation size={HERO_SIZE} item={property} />
-        <View style={styles.featuredMetaRow}>
-          <CardPrice size={HERO_SIZE}>{formatPrice(property.price, property.priceUnit)}</CardPrice>
-          {/* Beds + area only: the third cell used to be the property type, which
-              is now a chip, and a baths cell would crowd the price. */}
-          <CardSpecs size={HERO_SIZE} specs={listingSpecs(property, { baths: false })} style={styles.featuredSpecs} />
-        </View>
+        <CardPrice size={HERO_SIZE}>{formatPrice(property.price, property.priceUnit)}</CardPrice>
+        {/* Beds + area only: the third cell used to be the property type, which
+            is now a chip, and baths would not survive this column's width. */}
+        <CardSpecs size={FEATURED_MINOR} specs={listingSpecs(property, { baths: false })} style={styles.featuredSpecs} />
         <View style={styles.chipRow}>
           {property.isVerified ? (
-            <CardChip size={HERO_SIZE} icon="shield-checkmark-outline" label="Verified" />
+            <CardChip size={FEATURED_MINOR} icon="shield-checkmark-outline" label="Verified" />
           ) : null}
-          <CardChip size={HERO_SIZE} icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
+          <CardChip size={FEATURED_MINOR} icon="business-outline" label={propertyTypeLabel(property.propertyType)} />
         </View>
       </View>
     </Pressable>
@@ -520,31 +543,34 @@ const styles = StyleSheet.create({
 
   // Section
   section:           { paddingHorizontal: 16, paddingVertical: 24 },
+  sectionCompact:    { paddingVertical: 16 },
   sectionHeaderRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionAccentBar:  { width: 32, height: 3, borderRadius: 2, backgroundColor: colors.accent, marginTop: 8 },
   sectionTitleRow:   { flexDirection: 'row', alignItems: 'center', gap: 7 },
   sectionTitle:      { ...typography.h2 },
+  sectionTitleCompact: { fontSize: 17, lineHeight: 23 },
   sectionAction:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sectionActionText: { fontFamily: fonts.bold, fontSize: 13, color: colors.brand },
   sectionSub:        { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6 },
 
-  // Featured — one large card per page: photo on top, white info panel below
-  featured:          { width: FEATURED_W, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.white, ...shadow.card },
-  featuredImg:       { width: '100%', height: FEATURED_IMG_H },
-  featuredBadge:        { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.brand, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.sm },
+  // Featured — one card per page: inset photo on the left, facts on the right
+  featured:          { width: FEATURED_W, flexDirection: 'row', gap: 12, padding: FEATURED_PAD, borderRadius: radius.lg, backgroundColor: colors.white, ...shadow.card },
+  featuredPhoto:     { width: FEATURED_IMG_W, height: FEATURED_IMG_H, borderRadius: radius.md, overflow: 'hidden' },
+  featuredImg:       { width: '100%', height: '100%' },
+  featuredBadge:        { position: 'absolute', top: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.brand, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.sm },
   featuredBadgePremium: { backgroundColor: colors.brand },
-  featuredBadgeText:    { fontFamily: fonts.semibold, fontSize: 11, color: '#fff', lineHeight: 15 },
-  featuredHeart:        { position: 'absolute', top: 12, right: 12, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, ...shadow.card },
-  // Sits just inside the photo's bottom-left corner (the card, not the photo,
-  // is the positioning parent — hence the offset off the photo height).
-  photoPill:         { position: 'absolute', top: FEATURED_IMG_H - 39, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(15,51,47,0.72)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.sm },
-  photoPillText:     { fontFamily: fonts.semibold, fontSize: 12, lineHeight: 15, color: '#fff' },
-  featuredInfo:      { padding: 14, gap: CARD_SCALE.lg.gap },
-  featuredMetaRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 2 },
-  // The specs give way before the price does — a truncated "1650 sq.f…" costs
-  // less than a truncated price.
-  featuredSpecs:     { flexShrink: 1 },
-  chipRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  featuredBadgeText:    { fontFamily: fonts.semibold, fontSize: 10, color: '#fff', lineHeight: 13 },
+  featuredHeart:        { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, ...shadow.card },
+  photoPill:         { position: 'absolute', bottom: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(15,51,47,0.72)', paddingHorizontal: 7, paddingVertical: 4, borderRadius: radius.sm },
+  photoPillText:     { fontFamily: fonts.semibold, fontSize: 10.5, lineHeight: 13, color: '#fff' },
+  featuredInfo:      { flex: 1, justifyContent: 'center', paddingRight: 4, gap: CARD_SCALE.md.gap },
+  featuredSpecs:     { marginTop: 1 },
+  chipRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 2 },
+
+  // Carousel dots
+  dots:              { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 10 },
+  dot:               { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
+  dotActive:         { width: 18, backgroundColor: colors.brand },
 
   // Recent listings
   // Photo stretches to whatever the body needs instead of being a fixed 108

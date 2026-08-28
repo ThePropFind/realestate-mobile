@@ -51,17 +51,16 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
  * track what actually paints (photo, title, locality, price row, spec strip) so
  * the hand-off to content does not jump.
  */
-export function FeaturedCardSkeleton({ width, imageHeight = 210 }: { width: number; imageHeight?: number }) {
+export function FeaturedCardSkeleton({ width, imageHeight = 148, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
   return (
     <View style={[styles.featured, { width }]}>
-      <Skeleton style={[styles.featuredImg, { height: imageHeight }]} />
+      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 20) * 0.46) }]} />
       <View style={styles.featuredBody}>
-        <Skeleton style={{ width: '80%', height: 18 }} />
-        <Skeleton style={{ width: '55%', height: 13 }} />
-        <Skeleton style={{ width: '40%', height: 20 }} />
-        <View style={styles.featuredSpecs}>
-          {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} style={styles.featuredSpec} />)}
-        </View>
+        <Skeleton style={{ width: '55%', height: 11 }} />
+        <Skeleton style={{ width: '85%', height: 16 }} />
+        <Skeleton style={{ width: '60%', height: 18 }} />
+        <Skeleton style={{ width: '75%', height: 12 }} />
+        <Skeleton style={{ width: '50%', height: 16, borderRadius: 7 }} />
       </View>
     </View>
   )
@@ -111,11 +110,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden', ...shadow.card,
   },
   image: { width: 110, height: 120, borderRadius: 0 },
-  featured:     { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.white, ...shadow.card },
-  featuredImg:  { width: '100%', borderRadius: 0 },
-  featuredBody: { padding: 14, gap: 9 },
-  featuredSpecs:{ flexDirection: 'row', gap: 8, marginTop: 2 },
-  featuredSpec: { flex: 1, height: 38, borderRadius: radius.sm },
+  featured:     { flexDirection: 'row', gap: 12, padding: 10, borderRadius: radius.lg, backgroundColor: colors.white, ...shadow.card },
+  featuredImg:  { borderRadius: radius.md },
+  featuredBody: { flex: 1, justifyContent: 'center', gap: 8 },
   body:  { flex: 1, padding: 12, gap: 8 },
   detailBody:  { padding: 16, gap: 10 },
   detailChips: { flexDirection: 'row', gap: 8, marginVertical: 4 },
