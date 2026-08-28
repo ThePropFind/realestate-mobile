@@ -25,10 +25,12 @@ import type { ListingType, PropertyCard } from '../../src/types'
 // whole section lands inside the first screen instead of pushing the fold. The
 // card stops short of the content width on purpose — the sliver of the next card
 // is what says "this scrolls".
-const FEATURED_W = Dimensions.get('window').width - 48
+const FEATURED_W = Dimensions.get('window').width - 36
 const FEATURED_PAD = 10
-const FEATURED_IMG_H = 148
-const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2) * 0.46)
+const FEATURED_IMG_H = 158
+// The photo takes the larger half of the card — it is the reason the section
+// exists, and at 0.46 it read as a thumbnail bolted to a text block.
+const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2 - 12) * 0.55)
 
 // Home draws three different listing cards; all three speak the one card
 // vocabulary in src/components/property/CardAtoms.tsx. The featured card runs at
@@ -462,7 +464,7 @@ function FeaturedCollectionCard({ property, saved, onToggleSave, onPress }: { pr
           is the app's usual one: title, price, specs, chips. */}
       <View style={styles.featuredInfo}>
         <CardLocation size={FEATURED_MINOR} item={property} />
-        <CardTitle size={HERO_SIZE}>{property.title}</CardTitle>
+        <CardTitle size={HERO_SIZE} lines={2}>{property.title}</CardTitle>
         <CardPrice size={HERO_SIZE}>{formatPrice(property.price, property.priceUnit)}</CardPrice>
         {/* Beds + area only: the third cell used to be the property type, which
             is now a chip, and baths would not survive this column's width. */}

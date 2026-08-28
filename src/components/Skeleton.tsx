@@ -51,10 +51,10 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
  * track what actually paints (photo, title, locality, price row, spec strip) so
  * the hand-off to content does not jump.
  */
-export function FeaturedCardSkeleton({ width, imageHeight = 148, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
+export function FeaturedCardSkeleton({ width, imageHeight = 158, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
   return (
     <View style={[styles.featured, { width }]}>
-      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 20) * 0.46) }]} />
+      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 32) * 0.55) }]} />
       <View style={styles.featuredBody}>
         <Skeleton style={{ width: '55%', height: 11 }} />
         <Skeleton style={{ width: '85%', height: 16 }} />
