@@ -51,10 +51,10 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
  * track what actually paints (photo, title, locality, price row, spec strip) so
  * the hand-off to content does not jump.
  */
-export function FeaturedCardSkeleton({ width, imageHeight = 158, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
+export function FeaturedCardSkeleton({ width, imageHeight = 166, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
   return (
     <View style={[styles.featured, { width }]}>
-      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 32) * 0.55) }]} />
+      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 24) * 0.6) }]} />
       <View style={styles.featuredBody}>
         <Skeleton style={{ width: '55%', height: 11 }} />
         <Skeleton style={{ width: '85%', height: 16 }} />
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden', ...shadow.card,
   },
   image: { width: 110, height: 120, borderRadius: 0 },
-  featured:     { flexDirection: 'row', gap: 12, padding: 10, borderRadius: radius.lg, backgroundColor: colors.white, ...shadow.card },
+  featured:     { flexDirection: 'row', gap: 12, padding: 6, borderRadius: radius.lg, backgroundColor: colors.white, ...shadow.card },
   featuredImg:  { borderRadius: radius.md },
   featuredBody: { flex: 1, justifyContent: 'center', gap: 8 },
   body:  { flex: 1, padding: 12, gap: 8 },

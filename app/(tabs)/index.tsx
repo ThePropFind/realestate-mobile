@@ -26,11 +26,14 @@ import type { ListingType, PropertyCard } from '../../src/types'
 // card stops short of the content width on purpose — the sliver of the next card
 // is what says "this scrolls".
 const FEATURED_W = Dimensions.get('window').width - 36
-const FEATURED_PAD = 10
-const FEATURED_IMG_H = 158
-// The photo takes the larger half of the card — it is the reason the section
-// exists, and at 0.46 it read as a thumbnail bolted to a text block.
-const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2 - 12) * 0.55)
+// A thin gutter, not a mat: the photo is the card's subject, and 10pt of white
+// around it made the card read as a frame with a picture in it.
+const FEATURED_PAD = 6
+// Grows by exactly what the padding gave back, so the card's outer height is
+// unchanged — only the photo inside it gets bigger.
+const FEATURED_IMG_H = 166
+// 60/40 in the photo's favour, measured off the Green Growth mock.
+const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2 - 12) * 0.6)
 
 // Home draws three different listing cards; all three speak the one card
 // vocabulary in src/components/property/CardAtoms.tsx. The featured card runs at
@@ -283,7 +286,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Featured Properties */}
-        <Section compact title="Featured Property" icon="star" bleed action={{ label: 'View All', onPress: () => router.push('/search') }}>
+        <Section title="Featured Property" icon="star" bleed action={{ label: 'View All', onPress: () => router.push('/search') }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -390,16 +393,18 @@ function QuickAction({ icon, label, onPress }: { icon: React.ComponentProps<type
   )
 }
 
-// `compact` is the tighter header used by Featured: a smaller title and less
-// vertical air, so the section clears the fold on a 6"-class phone.
-function Section({ title, subtitle, icon, background = colors.white, bleed = false, compact = false, action, children }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof Ionicons>['name']; background?: string; bleed?: boolean; compact?: boolean; action?: { label: string; onPress: () => void }; children: React.ReactNode }) {
+// One header treatment for the whole screen. This used to carry a `compact` flag
+// that only Featured set, which left Featured at 17pt and the two sections under
+// it at 20pt — two levels of heading for three peer sections. The tighter size
+// won: it is what clears the fold on a 6"-class phone.
+function Section({ title, subtitle, icon, background = colors.white, bleed = false, action, children }: { title: string; subtitle?: string; icon?: React.ComponentProps<typeof Ionicons>['name']; background?: string; bleed?: boolean; action?: { label: string; onPress: () => void }; children: React.ReactNode }) {
   const headerPad = bleed ? { paddingHorizontal: 16 } : null
   return (
-    <View style={[styles.section, compact && styles.sectionCompact, bleed && { paddingHorizontal: 0 }, { backgroundColor: background }]}>
+    <View style={[styles.section, bleed && { paddingHorizontal: 0 }, { backgroundColor: background }]}>
       <View style={[styles.sectionHeaderRow, headerPad]}>
         <View style={styles.sectionTitleRow}>
-          {icon ? <Ionicons name={icon} size={compact ? 17 : 20} color={colors.accent} /> : null}
-          <Text style={[styles.sectionTitle, compact && styles.sectionTitleCompact]}>{title}</Text>
+          {icon ? <Ionicons name={icon} size={17} color={colors.accent} /> : null}
+          <Text style={styles.sectionTitle}>{title}</Text>
         </View>
         {action ? (
           <Pressable onPress={action.onPress} hitSlop={8} style={({ pressed }) => [styles.sectionAction, pressed && { opacity: 0.7 }]}>
@@ -411,7 +416,7 @@ function Section({ title, subtitle, icon, background = colors.white, bleed = fal
       {/* Icon-led headers (Featured) carry the gold accent in the icon already. */}
       {icon ? null : <View style={[styles.sectionAccentBar, bleed && { marginLeft: 16 }]} />}
       {subtitle ? <Text style={[styles.sectionSub, headerPad]}>{subtitle}</Text> : null}
-      <View style={{ marginTop: compact ? 6 : 12 }}>{children}</View>
+      <View style={{ marginTop: 6 }}>{children}</View>
     </View>
   )
 }
@@ -544,13 +549,11 @@ const styles = StyleSheet.create({
   quickLabel:        { fontFamily: fonts.semibold, fontSize: 12, color: colors.ink },
 
   // Section
-  section:           { paddingHorizontal: 16, paddingVertical: 24 },
-  sectionCompact:    { paddingVertical: 16 },
+  section:           { paddingHorizontal: 16, paddingVertical: 16 },
   sectionHeaderRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionAccentBar:  { width: 32, height: 3, borderRadius: 2, backgroundColor: colors.accent, marginTop: 8 },
   sectionTitleRow:   { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  sectionTitle:      { ...typography.h2 },
-  sectionTitleCompact: { fontSize: 17, lineHeight: 23 },
+  sectionTitle:      { ...typography.h2, fontSize: 17, lineHeight: 23 },
   sectionAction:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sectionActionText: { fontFamily: fonts.bold, fontSize: 13, color: colors.brand },
   sectionSub:        { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 6 },
@@ -565,7 +568,9 @@ const styles = StyleSheet.create({
   featuredHeart:        { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, ...shadow.card },
   photoPill:         { position: 'absolute', bottom: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(15,51,47,0.72)', paddingHorizontal: 7, paddingVertical: 4, borderRadius: radius.sm },
   photoPillText:     { fontFamily: fonts.semibold, fontSize: 10.5, lineHeight: 13, color: '#fff' },
-  featuredInfo:      { flex: 1, justifyContent: 'center', paddingRight: 4, gap: CARD_SCALE.md.gap },
+  // paddingRight keeps the facts ~14pt off the card edge even though the card's
+  // own padding dropped to 6 — the photo wanted the tighter gutter, the text did not.
+  featuredInfo:      { flex: 1, justifyContent: 'center', paddingRight: 8, gap: CARD_SCALE.md.gap },
   featuredSpecs:     { marginTop: 1 },
   chipRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 2 },
 
