@@ -549,7 +549,10 @@ const styles = StyleSheet.create({
   quickLabel:        { fontFamily: fonts.semibold, fontSize: 12, color: colors.ink },
 
   // Section
-  section:           { paddingHorizontal: 16, paddingVertical: 16 },
+  // 20, not the old 24 and not the 16 the compact metrics brought: folding
+  // `compact` into the default tightened every section at once, which read as
+  // cramped between them. Split the difference and keep the header size.
+  section:           { paddingHorizontal: 16, paddingVertical: 20 },
   sectionHeaderRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionAccentBar:  { width: 32, height: 3, borderRadius: 2, backgroundColor: colors.accent, marginTop: 8 },
   sectionTitleRow:   { flexDirection: 'row', alignItems: 'center', gap: 7 },
