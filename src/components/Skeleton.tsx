@@ -54,7 +54,7 @@ export function ListSkeleton({ count = 5, padded = true }: { count?: number; pad
 export function FeaturedCardSkeleton({ width, imageHeight = 166, imageWidth }: { width: number; imageHeight?: number; imageWidth?: number }) {
   return (
     <View style={[styles.featured, { width }]}>
-      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 24) * 0.6) }]} />
+      <Skeleton style={[styles.featuredImg, { height: imageHeight, width: imageWidth ?? Math.round((width - 24) * 0.5) }]} />
       <View style={styles.featuredBody}>
         <Skeleton style={{ width: '55%', height: 11 }} />
         <Skeleton style={{ width: '85%', height: 16 }} />

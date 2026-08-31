@@ -32,8 +32,9 @@ const FEATURED_PAD = 6
 // Grows by exactly what the padding gave back, so the card's outer height is
 // unchanged — only the photo inside it gets bigger.
 const FEATURED_IMG_H = 166
-// 60/40 in the photo's favour, measured off the Green Growth mock.
-const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2 - 12) * 0.6)
+// An even split. The mock measures closer to 60/40, but at that width the facts
+// column had ~112pt for a two-line title and wrapped the chips onto two rows.
+const FEATURED_IMG_W = Math.round((FEATURED_W - FEATURED_PAD * 2 - 12) * 0.5)
 
 // Home draws three different listing cards; all three speak the one card
 // vocabulary in src/components/property/CardAtoms.tsx. The featured card runs at
