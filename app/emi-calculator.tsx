@@ -7,8 +7,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, fonts, radius, shadow, typography } from '../src/theme'
 
 const BRAND      = colors.brand
-const PRINCIPAL  = '#1b2f6b'   // dark navy — principal share
-const INTEREST   = '#cdd9f0'   // light blue — interest share
+// Green Growth, replacing the v1 navy/light-blue pair this screen kept long
+// after the 2026-07-12 rebrand. The original read as one hue at two values —
+// keep that, so the donut still says "two parts of one total" rather than
+// "two unrelated categories": Forest Green over Sage. Brass stays reserved for
+// actions and badges, which is why it is not the interest colour.
+const PRINCIPAL  = colors.brand   // Forest Green — principal share
+const INTEREST   = colors.sage    // Sage — interest share
 const BG         = colors.bg
 const INK        = colors.ink
 const MUTED      = colors.muted
@@ -51,14 +56,19 @@ export default function EmiCalculatorScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
-      {/* Header */}
-      <SafeAreaView edges={['top']}>
+      {/* Brand header — same solid colors.brand as every other pushed screen.
+          This one used to be an ivory bar with an ink title, which is why it
+          read as a different app: it was the last screen still on the v1
+          chrome. The right-hand spacer was styled as a back button and so
+          painted an empty white circle in the corner; it is now invisible. */}
+      <SafeAreaView edges={['top']} style={{ backgroundColor: BRAND }}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="chevron-back" size={22} color={INK} />
+          <Pressable onPress={() => router.back()} hitSlop={10}
+            accessibilityRole="button" accessibilityLabel="Go back">
+            <Ionicons name="arrow-back" size={22} color="#fff" />
           </Pressable>
           <Text style={styles.headerTitle}>EMI Calculator</Text>
-          <View style={styles.backBtn} />
+          <View style={{ width: 22 }} />
         </View>
       </SafeAreaView>
 
@@ -238,9 +248,8 @@ function RingProgress({
 }
 
 const styles = StyleSheet.create({
-  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10 },
-  backBtn:       { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  headerTitle:   { ...typography.navTitle, color: INK },
+  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, backgroundColor: BRAND },
+  headerTitle:   { ...typography.navTitle, color: '#fff' },
 
   donutWrap:     { alignItems: 'center', paddingTop: 24, paddingBottom: 8 },
   donutLabel:    { fontFamily: fonts.semibold, fontSize: 13, color: MUTED },

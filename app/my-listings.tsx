@@ -5,7 +5,6 @@ import { ListSkeleton } from '../src/components/Skeleton'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import { propertyApi } from '../src/lib/api'
 import { useAuthStore } from '../src/store/authStore'
 import { colors, fonts, radius, shadow, typography } from '../src/theme'
@@ -13,7 +12,6 @@ import type { ListingStatus, PriceUnit, PropertyCard } from '../src/types'
 
 const BRAND  = colors.brand
 const ACCENT = colors.accent
-const HEADER_GRADIENT = ['#0f332f', '#184A45'] as const
 
 const STATUS_STYLE: Record<ListingStatus, { bg: string; fg: string; label: string }> = {
   DRAFT:          { bg: '#f1f5f9', fg: '#64748b', label: 'Draft' },
@@ -113,11 +111,16 @@ export default function MyListingsScreen() {
 
 function Header({ onBack, count }: { onBack: () => void; count?: number }) {
   return (
-    <LinearGradient colors={HEADER_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+    // Solid colors.brand, NOT a diagonal gradient. The root layout paints the
+    // status-bar band in colors.brand, so a gradient starting at brandDark met
+    // it as a visibly different, darker green right under the clock — the same
+    // trap app/post.tsx already documents. Every other pushed screen (compare,
+    // bookings) is solid brand; this was the last gradient header.
+    <View style={styles.header}>
       <Pressable onPress={onBack} hitSlop={8}><Ionicons name="arrow-back" size={22} color="#fff" /></Pressable>
       <Text style={styles.headerTitle}>My Listings{count != null ? ` (${count})` : ''}</Text>
       <View style={{ width: 22 }} />
-    </LinearGradient>
+    </View>
   )
 }
 
@@ -168,7 +171,7 @@ function formatPrice(price: number, unit: PriceUnit): string {
 
 const styles = StyleSheet.create({
   safe:         { flex: 1, backgroundColor: colors.bg },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 16, backgroundColor: BRAND },
   headerTitle:  { ...typography.navTitle, color: '#fff' },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   emptyIcon:    { width: 84, height: 84, borderRadius: 42, backgroundColor: '#e6ece1', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },

@@ -15,10 +15,12 @@ interface AuthState {
 
   hydrate: () => Promise<void>
   setSession: (accessToken: string, refreshToken: string, user: UserInfo) => Promise<void>
+  /** Patch the cached user without touching the tokens — used by Settings. */
+  updateUser: (patch: Partial<UserInfo>) => Promise<void>
   clearSession: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
@@ -48,6 +50,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
     ])
     set({ accessToken, refreshToken, user, isLoggedIn: true })
+  },
+
+  updateUser: async (patch) => {
+    const current = get().user
+    if (!current) return
+    const next = { ...current, ...patch }
+    // Persist before setting state: a crash between the two would otherwise
+    // leave the UI showing a name that is gone on the next launch.
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(next))
+    set({ user: next })
   },
 
   clearSession: async () => {

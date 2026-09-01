@@ -77,7 +77,8 @@ export type WizardState = {
    * Which kind of plot, when propertyType is PLOT. The backend enum has one
    * PLOT value, so this is the only place "commercial plot" is distinguishable
    * from "residential plot" — it drives the chip selection and the preview
-   * label, and is deliberately not sent to the server.
+   * label. Persisted since backend V21; before that it was client-only, which
+   * is why an edited plot used to reopen as residential (regression #91).
    */
   plotUse: PlotUse | null
 
@@ -566,6 +567,10 @@ export function buildCreateRequest(s: WizardState): PropertyCreateRequest {
     cornerPlot:    land ? s.cornerPlot   : null,
     approvalAuthority: land ? s.approvalAuthority : null,
     ownershipType: s.ownershipType,
+    // Sent now that the backend persists it (V21, regression #91). Only a PLOT
+    // can carry one — AGRICULTURAL_LAND is its own property type, and sending a
+    // use for a flat would be meaningless.
+    plotUse: s.propertyType === 'PLOT' ? s.plotUse : null,
     soilType:        agri ? s.soilType        : null,
     waterSource:     land ? s.waterSource     : null,
     hasWell:         land ? s.hasWell         : null,

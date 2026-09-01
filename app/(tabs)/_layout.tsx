@@ -21,6 +21,19 @@ export default function TabsLayout() {
   return (
     <View style={{ flex: 1 }}>
       <Tabs
+        /**
+         * Return to the tab you came from, not to Home.
+         *
+         * Bottom-tabs defaults to `backBehavior: 'firstRoute'` — whenever the
+         * TAB navigator is the one that handles a back action, it jumps to the
+         * first tab, which here is Home. That is exactly the reported symptom:
+         * Profile → My Listings, then the Android back GESTURE lands on Home
+         * while the in-header ← lands on Profile. The header button calls
+         * expo-router's `router.back()`, which pops the ROOT stack and leaves
+         * the tab state alone; the system gesture takes the other path and hits
+         * the `firstRoute` rule. `history` makes both paths agree.
+         */
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: true,

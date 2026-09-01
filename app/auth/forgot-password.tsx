@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native'
 import { Text } from '../../src/components/Text'
-import { Link, Stack, useRouter } from 'expo-router'
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHeaderOffset } from '../../src/lib/useHeaderOffset'
 import { Ionicons } from '@expo/vector-icons'
@@ -24,8 +24,11 @@ const schema = z.object({
 export default function ForgotPasswordScreen() {
   const headerOffset = useHeaderOffset()
   const router = useRouter()
+  // Settings sends the signed-in user's address so "Change password" does not
+  // ask them to retype an email the app already knows.
+  const { email: prefill } = useLocalSearchParams<{ email?: string }>()
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(typeof prefill === 'string' ? prefill : '')
   const [error, setError] = useState<string>()
   const [submitting, setSubmitting] = useState(false)
 

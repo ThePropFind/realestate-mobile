@@ -103,6 +103,8 @@ export interface PropertyDetail {
   plotLengthFt: number | null; plotBreadthFt: number | null; plotAreaCents: number | null
   roadWidthFt: number | null; boundaryWall: boolean | null; cornerPlot: boolean | null
   approvalAuthority: ApprovalAuthority | null; ownershipType: OwnershipType | null
+  /** PLOT listings only (backend V21). Null on everything else — never default it to RESIDENTIAL. */
+  plotUse: PlotUse | null
   soilType: SoilType | null; waterSource: WaterSource | null; hasWell: boolean | null
   electricService: ElectricService | null; cropCurrentlyGrown: string | null; fenced: boolean | null
   promoterProjectName: string | null; promoterYearsExperience: number | null
@@ -239,6 +241,7 @@ export interface PropertyCreateRequest {
   cornerPlot?: boolean | null
   approvalAuthority?: ApprovalAuthority | null
   ownershipType?: OwnershipType | null
+  plotUse?: PlotUse | null
   soilType?: SoilType | null
   waterSource?: WaterSource | null
   hasWell?: boolean | null
@@ -250,4 +253,34 @@ export interface PropertyCreateRequest {
   promoterTotalProjects?: number | null
   promoterCitiesActive?: string | null
   promoterReraId?: string | null
+}
+
+/** Intended use of a PLOT listing — propertyType's single PLOT value cannot carry it. */
+export type PlotUse = 'RESIDENTIAL' | 'COMMERCIAL' | 'INDUSTRIAL'
+
+/**
+ * The signed-in user's own account — GET/PATCH /users/me.
+ *
+ * Distinct from PublicProfile: this one carries email and phone and is only
+ * ever fetched for the authenticated principal.
+ */
+export interface Me {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  role: UserRole
+  profilePhotoUrl: string | null
+  isEmailVerified: boolean
+  memberSince: string
+  /** Send the "someone enquired about your listing" email? */
+  notifyEmailInquiries: boolean
+}
+
+/** Partial update of the signed-in account. An omitted key means "leave it alone". */
+export interface UpdateMeRequest {
+  name?: string
+  /** 10-digit Indian mobile, or '' to clear it. */
+  phone?: string
+  notifyEmailInquiries?: boolean
 }

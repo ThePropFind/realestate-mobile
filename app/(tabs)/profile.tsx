@@ -50,17 +50,13 @@ export default function ProfileScreen() {
 
       <View style={styles.list}>
         <Row icon="home-outline"            label="My Listings"   onPress={() => router.push('/my-listings')} />
-        <Row icon="heart-outline"           label="Favourites"     onPress={() => setInfo({
-          icon: 'heart-outline', title: 'Favourites',
-          body: 'Save the properties you love and find them all here — this is coming soon.',
-        })} />
+        {/* Favourites IS the Saved tab — same list, same favoritesApi. It sat
+            behind a "coming soon" sheet long after the tab shipped. */}
+        <Row icon="heart-outline"           label="Favourites"    onPress={() => router.push('/saved')} />
         <Row icon="calendar-outline"        label="Bookings"      onPress={() => router.push('/bookings')} />
         {/* Moved here when Home's quick actions became Buy/Rent/Commercial/Plots */}
         <Row icon="calculator-outline"      label="EMI Calculator" onPress={() => router.push('/emi-calculator')} />
-        <Row icon="settings-outline"        label="Settings"       onPress={() => setInfo({
-          icon: 'settings-outline', title: 'Settings',
-          body: 'Profile and notification settings are coming soon.',
-        })} />
+        <Row icon="settings-outline"        label="Settings"      onPress={() => router.push('/settings')} />
         <Row icon="log-out-outline"         label="Sign out"       onPress={() => setSignOutOpen(true)} danger />
       </View>
 

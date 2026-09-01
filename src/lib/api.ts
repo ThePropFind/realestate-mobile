@@ -8,6 +8,7 @@ import type {
   PropertyCreateRequest, PropertyImage,
   SiteVisitBooking, BookSiteVisitRequest,
   PublicProfile, ReportListingRequest, ReportListingResponse,
+  Me, UpdateMeRequest,
 } from '../types'
 
 const baseURL =
@@ -114,6 +115,9 @@ export const propertyApi = {
     )
   },
   deleteVideo: (propertyId: string) => api.delete(`/properties/${propertyId}/video`),
+  /** Promote an image already on the listing to cover (backend V21-era, regression #90). */
+  setPrimaryImage: (propertyId: string, imageId: string) =>
+    api.patch<PropertyImage>(`/properties/${propertyId}/images/${imageId}/primary`),
   getSimilar:  (id: string)               => api.get<PropertyCard[]>(`/properties/${id}/similar`),
   /** Report a listing. Public — works logged out; the server meters it at 5/hr per IP. */
   report: (propertyId: string, data: ReportListingRequest) =>
@@ -140,6 +144,9 @@ export const propertyApi = {
 export const userApi = {
   /** Public seller/agent profile. Carries no phone and no email by design. */
   getPublicProfile: (id: string) => api.get<PublicProfile>(`/users/${id}/public`),
+  /** The signed-in user's own account. Resolved from the token, not from an id. */
+  me:       ()                     => api.get<Me>('/users/me'),
+  updateMe: (data: UpdateMeRequest) => api.patch<Me>('/users/me', data),
 }
 
 // ── Search support ──────────────────────────────────────────
